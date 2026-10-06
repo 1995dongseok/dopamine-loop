@@ -74,7 +74,7 @@ export function FinishedScreen({ snapshot, locked, onLeave }: { snapshot: RoomSn
           <ResultView result={game.lastResult} snapshot={snapshot} animate={false} />
         </details>
       )}
-      <HistoryLog snapshot={snapshot} />
+      <HistoryLog snapshot={snapshot} excludeDay={game.lastResult?.day} />
     </main>
   );
 }

@@ -1,8 +1,9 @@
 // 카드 표시·예상 밤 확률. 상태를 변경하지 않는다.
-import type { ActionId, ActionPreview, Counts, Plan, PlayerRuleState } from '../types';
+import type { ActionId, ActionPreview, Counts, Plan, PlanSlot, PlayerRuleState } from '../types';
 import { ACTION_DATA as D, type Stage } from './actionData';
-import { dayHabitOps } from './effects';
-import { findStage, sign } from './meta';
+import { STUDY_HIGH_FLAG, applyAction, applyNoAction, dayHabitOps } from './effects';
+import { findStage, isActionId, sign } from './meta';
+import { cloneState, resetDaily } from './state';
 import { habitDistribution } from './resolve';
 import { normalizePlan } from './validate';
 
@@ -94,4 +95,70 @@ export function habitsAfterPlan(player: PlayerRuleState, plan?: Plan | null): Co
 /** 예상 밤 확률: 현재 습관에 계획(낮 실행분 습관 증가·회복 감소)을 반영한 분포. 0~1, 0인 행동은 생략 */
 export function nightOdds(player: PlayerRuleState, plan?: Plan | null): Counts {
   return habitDistribution(habitsAfterPlan(player, plan));
+}
+
+/** 미리보기 시뮬레이션용: 점수 부분에만 영향을 주는 난수 (사용 횟수·습관·연속·하루 기록에는 영향 없음) */
+const PREVIEW_RNG = { next: () => 0.5 };
+
+/**
+ * 오늘 계획에서 앞 칸들(plannedSlotsBefore: 0번 칸부터 순서대로, null=무행동 또는 비용 2가 소비한 칸)을
+ * 실제 규칙 처리(낮 시작 초기화 → 앞 칸 적용)로 시뮬레이션한 상태. 입력을 변경하지 않는다.
+ * 점수는 공동 효과·확률 결과를 알 수 없으므로 의미가 없다(사용 횟수·하루 횟수·연속·하루 기록·습관만 정확).
+ */
+export function stateBeforePlannedSlot(player: PlayerRuleState, plannedSlotsBefore: (PlanSlot | null)[]): PlayerRuleState {
+  const p = cloneState(player);
+  resetDaily(p);
+  plannedSlotsBefore.slice(0, 3).forEach((s, i) => {
+    if (s && isActionId(s.actionId)) applyAction(p, s.actionId, s.targetId, 'day', i, { friendsCount: 1, isLowest: false }, PREVIEW_RNG);
+    else applyNoAction(p, 'day', i, '무행동');
+  });
+  return p;
+}
+
+/**
+ * 오늘 계획의 앞 칸들 다음에 이 행동을 낮에 실행할 때의 결과 범위.
+ * 하루 횟수·연속 사용·하루 1회 고단계처럼 앞 칸으로 확정되는 조건은 정확히 반영하고,
+ * 공동 보너스(친구·봉사)와 확률 결과(도박·창작)만 min~max 범위로 남긴다. 밤 보너스는 낮 실행이므로 제외.
+ */
+export function previewPlannedAction(
+  player: PlayerRuleState, actionId: ActionId, plannedSlotsBefore: (PlanSlot | null)[],
+): ActionPreview {
+  const p = stateBeforePlannedSlot(player, plannedSlotsBefore);
+  const base = previewAction(p, actionId);
+  const use = base.nextUse;
+  const r = (min: number, max: number, label: string): ActionPreview => ({ actionId, nextUse: use, min, max, label });
+  const daily = p.dailyUses[actionId] ?? 0;
+
+  switch (actionId) {
+    case 'shopping': {
+      const v = findStage(D.shopping.stages, use).score;
+      const stage = stageLabel(D.shopping.stages, use, scoreOf);
+      return daily > 0
+        ? r(v + D.shopping.sameDayPenalty, v + D.shopping.sameDayPenalty, `${stage} · 같은 날 재사용 ${sign(D.shopping.sameDayPenalty)} 적용`)
+        : r(v, v, `${stage} · 같은 날 재사용 시 ${sign(D.shopping.sameDayPenalty)}`);
+    }
+    case 'binge_game': {
+      const v = findStage(D.binge_game.stages, use).score;
+      const stage = stageLabel(D.binge_game.stages, use, scoreOf);
+      return p.streakAction === 'binge_game'
+        ? r(v + D.binge_game.streakPenalty, v + D.binge_game.streakPenalty, `${stage} · 연속 사용 ${sign(D.binge_game.streakPenalty)} 적용`)
+        : r(v, v, `${stage} · 연속 사용 시 ${sign(D.binge_game.streakPenalty)}`);
+    }
+    case 'music': return r(D.music.score, D.music.score, `고정 · 밤에 뽑히면 ${sign(D.music.nightBonus)}`);
+    case 'cook':
+      return daily === 0
+        ? r(D.cook.score + D.cook.firstOfDayBonus, D.cook.score + D.cook.firstOfDayBonus, `고정 · 오늘 첫 요리 ${sign(D.cook.firstOfDayBonus)} 포함`)
+        : r(D.cook.score, D.cook.score, '고정 · 오늘 첫 요리 보너스 사용함');
+    case 'study': {
+      const s = findStage(D.study.stages, use);
+      const label = stageLabel(D.study.stages, use, scoreOf);
+      if (!s.high) return r(s.score, s.score, label);
+      return p.flags[STUDY_HIGH_FLAG]
+        ? r(D.study.baseScore, D.study.baseScore, `${label} · 오늘 고단계 사용함: 기본`)
+        : r(s.score, s.score, `${label} · 고단계 하루 1회`);
+    }
+    default:
+      // 그 밖의 행동은 하루 기록과 무관하거나(누적 단계·고정) 범위가 본질적(확률·공동 보너스)이다
+      return base;
+  }
 }

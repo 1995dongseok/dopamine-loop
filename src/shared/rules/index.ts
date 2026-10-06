@@ -6,6 +6,7 @@
 //   GAME_CONSTANTS, ACTIONS, getAction, createPlayerState, validatePlan, emptyPlan,
 //   resolveDay(players, plans, day, rng), checkWinner(players, day),
 //   previewAction(player, actionId), nightOdds(player, plan?), seededRng(seed)
+//   (추가) previewPlannedAction(player, actionId, plannedSlotsBefore), stateBeforePlannedSlot, habitsAfterPlan
 //   (추가) ACTION_DATA — 수치 원본, isActionId — 타입 가드
 export { GAME_CONSTANTS } from './constants';
 export { ACTIONS, getAction, isActionId } from './meta';
@@ -13,4 +14,4 @@ export { ACTION_DATA } from './actionData';
 export { createPlayerState, seededRng } from './state';
 export { validatePlan, emptyPlan } from './validate';
 export { resolveDay, checkWinner } from './resolve';
-export { previewAction, nightOdds } from './preview';
+export { previewAction, nightOdds, habitsAfterPlan, previewPlannedAction, stateBeforePlannedSlot } from './preview';

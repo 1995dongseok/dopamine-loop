@@ -156,6 +156,8 @@ interface SocketData {
   roomId?: string;
   playerId?: string;
   lastLeave?: { requestId: string; ack: Ack };
+  /** 이 소켓에서 마지막으로 성공한 방 생성·참가 (같은 requestId 재전송 시 재생) */
+  lastEntry?: { requestId: string; roomId: string; playerId: string; ack: Ack<JoinResult> };
 }
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
@@ -285,15 +287,15 @@ export class GameServer {
           if (e instanceof CmdError) res = { ok: false, code: e.code, message: e.message };
           else {
             this.log.error('command failed', { event, error: e instanceof Error ? e.message : String(e) });
-            res = { ok: false, code: 'BAD_REQUEST', message: 'internal error' };
+            res = { ok: false, code: 'INTERNAL', message: 'internal error' };
           }
         }
         try { reply(res); } catch { /* 클라이언트 측 오류 무시 */ }
       });
     };
 
-    handle('room:create', (p) => this.cmdCreate(s, p), true);
-    handle('room:join', (p) => this.cmdJoin(s, ip, p), true);
+    handle('room:create', (p) => this.withEntryRequest(s, p, () => this.cmdCreate(s, p)), true);
+    handle('room:join', (p) => this.withEntryRequest(s, p, () => this.cmdJoin(s, ip, p)), true);
     handle('room:resume', (p) => this.cmdResume(s, ip, p), true);
     handle('room:leave', (p) => this.cmdLeave(s, p));
     handle('lobby:ready', (p) => this.withPlayer(s, p, (room, pl) => this.cmdReady(room, pl, p)));
@@ -337,6 +339,39 @@ export class GameServer {
     player.processed.set(requestId, res);
     if (player.processed.size > MAX_PROCESSED_PER_PLAYER) {
       player.processed.delete(player.processed.keys().next().value as string);
+    }
+    return res;
+  }
+
+  /** 이 소켓이 현재 어떤 방의 참가자로 유효하게 바인딩되어 있는지 (부작용 없음) */
+  private boundPlayer(s: IoSocket): { room: RoomRec; player: PlayerRec } | null {
+    const { roomId, playerId } = s.data;
+    const room = roomId ? this.rooms.get(roomId) : undefined;
+    const player = room?.players.find((p) => p.playerId === playerId);
+    if (!room || !player || player.left || player.socketId !== s.id) return null;
+    return { room, player };
+  }
+
+  /**
+   * 방 생성·참가의 재전송 처리 (소켓 단위). 같은 소켓의 같은 requestId는 저장된 응답을 재생하고
+   * (아직 그 참가자로 연결되어 있으면 최신 스냅샷으로), 방이나 참가자를 새로 만들지 않는다.
+   * 이미 다른 생성·참가·복귀로 방에 들어간 소켓의 새 요청은 BAD_PHASE로 거절한다(먼저 나가야 함).
+   */
+  private withEntryRequest(s: IoSocket, p: Record<string, unknown>, fn: () => Ack<JoinResult>): Ack<JoinResult> {
+    const requestId = reqStr(p, 'requestId', MAX_REQUEST_ID);
+    const prev = s.data.lastEntry;
+    if (prev && prev.requestId === requestId) {
+      const bound = this.boundPlayer(s);
+      if (bound && bound.room.roomId === prev.roomId && bound.player.playerId === prev.playerId && prev.ack.ok) {
+        return { ...prev.ack, snapshot: this.snapshotFor(bound.room, bound.player) };
+      }
+      return prev.ack;
+    }
+    if (this.boundPlayer(s)) fail('BAD_PHASE', 'already in a room');
+    const res = fn();
+    if (res.ok) {
+      const bound = this.boundPlayer(s);
+      if (bound) s.data.lastEntry = { requestId, roomId: bound.room.roomId, playerId: bound.player.playerId, ack: res };
     }
     return res;
   }

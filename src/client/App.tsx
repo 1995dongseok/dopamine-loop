@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { client } from './net/client';
 import { useClientState } from './hooks';
 import { ConfirmDialog } from './components/common';
@@ -12,6 +12,12 @@ export function App() {
   const st = useClientState();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const snap = st.snapshot;
+
+  // 화면(단계·일차)이 바뀌면 맨 위부터 보이게 한다 (모바일에서 이전 화면의 스크롤 위치가 남지 않도록)
+  const screenKey = snap ? `${snap.code}:${snap.phase}:${snap.game?.gameId ?? ''}:${snap.game?.day ?? ''}` : 'home';
+  useEffect(() => {
+    try { window.scrollTo(0, 0); } catch { /* 무시 */ }
+  }, [screenKey]);
 
   // 조작 차단: 끊김·복귀 중·다른 탭으로 권한 이전
   const offline = st.conn !== 'online';

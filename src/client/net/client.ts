@@ -212,19 +212,30 @@ export class GameClient {
   }
 
   // ---- 방 입장 ----
-  async createRoom(nickname: string): Promise<CmdResult<JoinResult>> {
-    // create/join은 계약상 requestId가 없어 중복 생성을 피하려고 자동 재시도하지 않는다
-    if (!(await this.waitReady(false, ACK_TIMEOUT_MS))) return { ok: false, code: 'TIMEOUT', message: '' };
-    const res = await this.emitOnce<JoinResult>('room:create', { nickname }, ACK_TIMEOUT_MS * 2);
-    if (res.ok) this.onJoined(res);
-    return res;
+  /**
+   * 방 생성·참가: 응답이 없으면 같은 requestId로 재시도한다. 서버의 재전송 판별은 연결(소켓) 단위이므로
+   * 재시도는 첫 시도와 같은 연결에서만 한다(연결이 바뀌면 중복 생성 위험이 있어 중단).
+   */
+  private async entryCommand(event: 'room:create' | 'room:join', payload: Record<string, unknown>): Promise<CmdResult<JoinResult>> {
+    if (!(await this.waitReady(false, ACK_TIMEOUT_MS))) return { ok: false, code: 'TIMEOUT', message: 'not connected' };
+    const body = { requestId: newRequestId(), ...payload };
+    const socketId = this.socket.id;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      if (!this.socket.connected || this.socket.id !== socketId) break;
+      const res = await this.emitOnce<JoinResult>(event, body, ACK_TIMEOUT_MS);
+      if (res.ok) { this.onJoined(res); return res; }
+      if (res.code !== 'TIMEOUT') return res;
+      await delay(300 * attempt);
+    }
+    return { ok: false, code: 'TIMEOUT', message: 'timeout' };
   }
 
-  async joinRoom(code: string, nickname: string): Promise<CmdResult<JoinResult>> {
-    if (!(await this.waitReady(false, ACK_TIMEOUT_MS))) return { ok: false, code: 'TIMEOUT', message: '' };
-    const res = await this.emitOnce<JoinResult>('room:join', { code, nickname }, ACK_TIMEOUT_MS * 2);
-    if (res.ok) this.onJoined(res);
-    return res;
+  createRoom(nickname: string): Promise<CmdResult<JoinResult>> {
+    return this.entryCommand('room:create', { nickname });
+  }
+
+  joinRoom(code: string, nickname: string): Promise<CmdResult<JoinResult>> {
+    return this.entryCommand('room:join', { code, nickname });
   }
 
   private resumeInFlight: Promise<void> | null = null;
@@ -296,10 +307,14 @@ export class GameClient {
   async leave(): Promise<void> {
     if (this.socket.connected && this.authed) {
       const body = { requestId: newRequestId() };
+      let confirmed = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
         const res = await this.emitOnce('room:leave', body, ACK_TIMEOUT_MS);
-        if (res.ok || res.code !== 'TIMEOUT') break;
+        if (res.ok || res.code !== 'TIMEOUT') { confirmed = true; break; }
       }
+      // 응답을 못 받았으면 이 연결이 서버에서 아직 참가자로 묶여 있을 수 있다(새 방 생성·참가가 거절됨).
+      // 연결을 새로 만들어 묶임을 끊는다. 토큰은 아래에서 폐기되므로 자동 복귀하지 않는다.
+      if (!confirmed) { this.goHome(null); this.socket.disconnect().connect(); return; }
     }
     this.goHome(null);
   }

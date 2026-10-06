@@ -1,5 +1,5 @@
 // 규칙 함수 안전 래퍼와 계획(슬롯) 편집 도우미. 규칙 함수가 아직 미구현이어도 화면이 죽지 않게 한다.
-import { ACTIONS, nightOdds, previewAction } from '../../shared/rules';
+import { ACTIONS, habitsAfterPlan, nightOdds, previewPlannedAction } from '../../shared/rules';
 import type {
   ActionCategory, ActionId, ActionMeta, ActionPreview, Counts, Plan, PlanSlot, PlayerRuleState,
 } from '../../shared/types';
@@ -77,28 +77,24 @@ export function plannedSlots(cells: Cells): PlanSlot[] {
   return cells.filter((c): c is PlanSlot => c !== null && c !== 'used');
 }
 
-/**
- * 카드 미리보기용 가상 상태: 이미 계획에 넣은 행동을 실행한 것으로 가정해
- * 누적·오늘 사용 횟수와 연속 사용을 반영한다(실제 결과는 서버가 확정).
- */
-export function virtualState(me: PlayerRuleState, cells: Cells): PlayerRuleState {
-  const uses: Counts = { ...me.uses };
-  const dailyUses: Counts = {};
-  let streakAction: ActionId | null = null;
-  let streakCount = 0;
-  for (const s of plannedSlots(cells)) {
-    const m = meta(s.actionId);
-    uses[s.actionId] = (uses[s.actionId] ?? 0) + 1;
-    dailyUses[s.actionId] = (dailyUses[s.actionId] ?? 0) + 1;
-    if (!m || m.category === 'recovery') { streakAction = null; streakCount = 0; }
-    else if (streakAction === s.actionId) streakCount++;
-    else { streakAction = s.actionId; streakCount = 1; }
-  }
-  return { ...me, uses, dailyUses, streakAction, streakCount };
+/** 이 행동을 다음 빈 칸에 놓는다고 할 때 그 칸보다 앞선 칸들 (비용 2가 소비한 칸·빈 칸은 null) */
+export function slotsBefore(cells: Cells, cost: number): (PlanSlot | null)[] {
+  const i = nextFreeIndex(cells, cost);
+  const upto = i < 0 ? 3 : i;
+  return cells.slice(0, upto).map((c) => (c && c !== 'used' ? c : null));
 }
 
-export function safePreview(p: PlayerRuleState, id: ActionId): ActionPreview | null {
-  try { return previewAction(p, id); } catch { return null; }
+/**
+ * 카드 미리보기: 오늘 계획의 앞 칸들을 실제 규칙으로 시뮬레이션한 뒤 이 행동이 다음 빈 칸에 놓일 때의 결과.
+ * 공동 보너스·확률 결과만 범위로 남는다(실제 결과는 서버가 확정).
+ */
+export function safePlannedPreview(me: PlayerRuleState, id: ActionId, cells: Cells): ActionPreview | null {
+  try { return previewPlannedAction(me, id, slotsBefore(cells, meta(id)?.cost ?? 1)); } catch { return null; }
+}
+
+/** 계획을 낮에 실행한 뒤의 습관 (대상 선택 화면 표시용) */
+export function safeHabitsAfter(me: PlayerRuleState, cells: Cells): Counts {
+  try { return habitsAfterPlan(me, planFromCells(cells)); } catch { return me.habits; }
 }
 
 export function safeNightOdds(p: PlayerRuleState, plan?: Plan | null): Counts | null {

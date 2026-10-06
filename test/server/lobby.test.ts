@@ -102,7 +102,9 @@ describe('room create / join', () => {
     const { url } = await server();
     const a = await client(url);
     expect((await a.emit('room:create', null)).code).toBe('BAD_REQUEST');
-    expect((await a.emit('room:create', { nickname: 5 })).code).toBe('BAD_REQUEST');
+    expect((await a.emit('room:create', { requestId: newRequestId(), nickname: 5 })).code).toBe('BAD_REQUEST');
+    expect((await a.emit('room:create', { nickname: 'a' })).code).toBe('BAD_REQUEST'); // requestId 필수
+    expect((await a.emit('room:join', { code: 'ABCDEF', nickname: 'a' })).code).toBe('BAD_REQUEST');
     expect((await a.emit('room:create', { nickname: 'a', junk: 'x'.repeat(5000) })).code).toBe('BAD_REQUEST');
   });
 });
@@ -163,6 +165,70 @@ describe('authentication and impersonation', () => {
     await sleep(50);
     expect(host.latest!.players[0].ready).toBe(true); // 재전송은 다시 실행되지 않음
     expect(host.latest!.revision).toBe(rev);
+  });
+
+  it('room:create retried with the same requestId does not create a second room', async () => {
+    const { url, gs } = await server();
+    const a = await client(url);
+    const rid = newRequestId();
+    const r1 = await a.create('A', rid);
+    const r2 = await a.create('A', rid);
+    expect(r1.ok && r2.ok).toBe(true);
+    if (!r1.ok || !r2.ok) return;
+    expect(r2.playerId).toBe(r1.playerId);
+    expect(r2.token).toBe(r1.token);
+    expect(r2.snapshot.code).toBe(r1.snapshot.code);
+    expect(r2.snapshot.players).toHaveLength(1);
+    expect(gs.roomCount).toBe(1);
+  });
+
+  it('room:join retried with the same requestId does not add a second player', async () => {
+    const { url } = await server();
+    const a = await client(url);
+    const b = await client(url);
+    const ca = await a.create('A');
+    if (!ca.ok) throw new Error();
+    const rid = newRequestId();
+    const j1 = await b.join(ca.snapshot.code, 'B', rid);
+    const j2 = await b.join(ca.snapshot.code, 'B', rid);
+    expect(j1.ok && j2.ok).toBe(true);
+    if (!j1.ok || !j2.ok) return;
+    expect(j2.playerId).toBe(j1.playerId);
+    expect(j2.token).toBe(j1.token);
+    expect(j2.snapshot.players.map((p) => p.nickname)).toEqual(['A', 'B']);
+    await sleep(50);
+    expect(a.latest!.players).toHaveLength(2);
+  });
+
+  it('rejects a new create/join from a socket that is already in a room', async () => {
+    const { url, gs } = await server();
+    const a = await client(url);
+    const b = await client(url);
+    const ca = await a.create('A');
+    const cb = await b.create('B');
+    if (!ca.ok || !cb.ok) throw new Error();
+    expect((await a.create('A2')).code).toBe('BAD_PHASE');
+    expect((await a.join(cb.snapshot.code, 'A3')).code).toBe('BAD_PHASE');
+    expect(gs.roomCount).toBe(2);
+    await sleep(50);
+    expect(b.latest!.players).toHaveLength(1);
+    // 원래 방의 조작 권한은 그대로
+    expect((await a.ready(true)).ok).toBe(true);
+    // 나간 뒤에는 같은 소켓으로 새 방을 만들 수 있다
+    expect((await a.leave()).ok).toBe(true);
+    const again = await a.create('A');
+    expect(again.ok).toBe(true);
+    expect(again.ok && again.snapshot.code).not.toBe(ca.snapshot.code);
+  });
+
+  it('answers unexpected server exceptions with INTERNAL', async () => {
+    const { url } = await server({ createRng: () => { throw new Error('boom'); } });
+    const { host, all } = await setupRoom(url, 2, clients);
+    for (const c of all) await c.ready(true);
+    const r = await host.start();
+    expect(r.code).toBe('INTERNAL');
+    await sleep(50);
+    expect(host.latest!.phase).toBe('LOBBY');
   });
 
   it('resume from a new connection revokes the old socket', async () => {

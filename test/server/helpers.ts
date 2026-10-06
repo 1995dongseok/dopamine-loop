@@ -75,14 +75,14 @@ export class TestClient {
     });
   }
 
-  async create(nickname: string): Promise<TestAck<JoinResult>> {
-    const r = await this.emit('room:create', { nickname });
+  async create(nickname: string, requestId = newRequestId()): Promise<TestAck<JoinResult>> {
+    const r = await this.emit('room:create', { requestId, nickname });
     if (r.ok) { this.playerId = r.playerId; this.token = r.token; }
     return r;
   }
 
-  async join(code: string, nickname: string): Promise<TestAck<JoinResult>> {
-    const r = await this.emit('room:join', { code, nickname });
+  async join(code: string, nickname: string, requestId = newRequestId()): Promise<TestAck<JoinResult>> {
+    const r = await this.emit('room:join', { requestId, code, nickname });
     if (r.ok) { this.playerId = r.playerId; this.token = r.token; }
     return r;
   }

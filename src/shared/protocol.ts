@@ -1,5 +1,5 @@
 // Socket.IO 통신 계약. 서버와 클라이언트가 공유한다.
-// 모든 명령은 ack 콜백으로 Ack<T>를 받는다. 상태는 'room:snapshot' 전체 스냅샷으로만 동기화한다.
+// 모든 명령은 ack 콜백으로 Ack<T>를 받는다. room:resume을 제외한 명령은 requestId로 재전송을 식별한다. 상태는 'room:snapshot' 전체 스냅샷으로만 동기화한다.
 import type { DayResult, Plan, PlayerRuleState } from './types';
 
 export type Phase = 'LOBBY' | 'DAY' | 'RESOLVING' | 'NIGHT_RESULT' | 'FINISHED';
@@ -22,7 +22,8 @@ export type ErrorCode =
   | 'STALE_DAY'          // day 불일치
   | 'ALREADY_SUBMITTED'
   | 'INVALID_PLAN'
-  | 'FORFEITED';
+  | 'FORFEITED'
+  | 'INTERNAL';          // 서버 내부 오류 (예상하지 못한 예외)
 
 export type Ack<T = {}> = ({ ok: true } & T) | { ok: false; code: ErrorCode; message: string };
 
@@ -78,8 +79,8 @@ export interface JoinResult {
 }
 
 export interface ClientToServerEvents {
-  'room:create': (p: { nickname: string }, ack: (r: Ack<JoinResult>) => void) => void;
-  'room:join': (p: { code: string; nickname: string }, ack: (r: Ack<JoinResult>) => void) => void;
+  'room:create': (p: { requestId: string; nickname: string }, ack: (r: Ack<JoinResult>) => void) => void;
+  'room:join': (p: { requestId: string; code: string; nickname: string }, ack: (r: Ack<JoinResult>) => void) => void;
   'room:resume': (p: { token: string }, ack: (r: Ack<JoinResult>) => void) => void;
   'room:leave': (p: { requestId: string }, ack: (r: Ack) => void) => void;
   'lobby:ready': (p: { requestId: string; ready: boolean }, ack: (r: Ack) => void) => void;

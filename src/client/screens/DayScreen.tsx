@@ -6,8 +6,8 @@ import { client } from '../net/client';
 import { useRemainingSeconds } from '../hooks';
 import {
   CATEGORY_LABEL, CATEGORY_ORDER, HABIT_ACTIONS, actionName, cellsFromPlan, clearCell, emptyCells, meta,
-  nextFreeIndex, placeAction, planFromCells, plannedSlots, rangeText, safeNightOdds, safePreview, sortedOdds,
-  usedPoints, virtualState, type Cells,
+  nextFreeIndex, placeAction, planFromCells, plannedSlots, rangeText, safeHabitsAfter, safeNightOdds, safePlannedPreview, sortedOdds,
+  usedPoints, type Cells,
 } from '../lib/rules';
 import { ConfirmDialog, Countdown, MobileScores, Modal, Scoreboard } from '../components/common';
 import { HistoryLog, OddsList, ResultView } from '../components/ResultView';
@@ -36,7 +36,7 @@ export function DayScreen({ snapshot, locked: connLocked }: { snapshot: RoomSnap
   const editable = !isSubmitted && !resolving && !connLocked && !me.forfeited && !submitting;
 
   const seconds = useRemainingSeconds(resolving ? null : game.deadline);
-  const vstate = useMemo(() => virtualState(me, cells), [me, cells]);
+  const habitsAfter = useMemo(() => safeHabitsAfter(me, cells), [me, cells]);
   const plan = planFromCells(cells);
   const expectedOdds = useMemo(() => sortedOdds(safeNightOdds(me, planFromCells(cells))), [me, cells]);
   const points = usedPoints(cells);
@@ -95,7 +95,7 @@ export function DayScreen({ snapshot, locked: connLocked }: { snapshot: RoomSnap
                 {ACTIONS.filter((a) => a.category === cat).map((a) => {
                   const inPlan = plannedSlots(cells).filter((s) => s.actionId === a.id).length;
                   const fits = nextFreeIndex(cells, a.cost) >= 0;
-                  const pv = safePreview(vstate, a.id);
+                  const pv = safePlannedPreview(me, a.id, cells);
                   return (
                     <button
                       key={a.id}
@@ -147,7 +147,7 @@ export function DayScreen({ snapshot, locked: connLocked }: { snapshot: RoomSnap
               <ResultView result={game.lastResult} snapshot={snapshot} animate={false} />
             </details>
           )}
-          <HistoryLog snapshot={snapshot} />
+          <HistoryLog snapshot={snapshot} excludeDay={game.lastResult?.day} />
         </aside>
       </div>
 
@@ -198,7 +198,7 @@ export function DayScreen({ snapshot, locked: connLocked }: { snapshot: RoomSnap
               .map((a) => (
                 <button key={a.id} className={`target-btn cat-${a.category}`} onClick={() => pickTarget(a.id)}>
                   <span>{a.name}</span>
-                  <span className="muted small">습관 {vstate.habits[a.id] ?? 0}</span>
+                  <span className="muted small">습관 {habitsAfter[a.id] ?? 0}</span>
                 </button>
               ))}
           </div>

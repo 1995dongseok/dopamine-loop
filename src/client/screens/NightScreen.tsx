@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react';
 import type { RoomSnapshot } from '../../shared/protocol';
 import { useRemainingSeconds } from '../hooks';
 import { sortedOdds } from '../lib/rules';
 import { Countdown, Scoreboard } from '../components/common';
-import { HistoryLog, OddsList, ResultView } from '../components/ResultView';
+import { HistoryLog, OddsList, ResultView, markNightAnimationShown, nightAnimationShown } from '../components/ResultView';
 
 export function NightScreen({ snapshot }: { snapshot: RoomSnapshot }) {
   const game = snapshot.game!;
@@ -10,6 +11,10 @@ export function NightScreen({ snapshot }: { snapshot: RoomSnapshot }) {
   const seconds = useRemainingSeconds(game.deadline);
   const myOdds = result ? sortedOdds(result.nightOdds[snapshot.you.playerId]) : [];
   const isLast = game.day >= game.maxDays;
+  const resultKey = result ? `${game.gameId}:${result.day}` : null;
+  // 처음 보는 결과만 애니메이션 (이미 본 결과는 새로고침·재마운트 시 바로 표시)
+  const [animatedKey] = useState(() => (resultKey && !nightAnimationShown(resultKey) ? resultKey : null));
+  useEffect(() => { if (resultKey) markNightAnimationShown(resultKey); }, [resultKey]);
 
   return (
     <main className="night">
@@ -26,8 +31,7 @@ export function NightScreen({ snapshot }: { snapshot: RoomSnapshot }) {
       <div className="day-layout">
         <div className="day-main">
           {result ? (
-            // key로 결과가 바뀔 때마다 애니메이션을 다시 재생 (장식용)
-            <ResultView key={`${game.gameId}:${result.day}`} result={result} snapshot={snapshot} animate />
+            <ResultView key={resultKey!} result={result} snapshot={snapshot} animate={animatedKey === resultKey} />
           ) : (
             <p className="muted">결과를 불러오는 중…</p>
           )}
@@ -41,7 +45,7 @@ export function NightScreen({ snapshot }: { snapshot: RoomSnapshot }) {
             <h3 className="panel-title">오늘 밤 나의 습관 확률</h3>
             <OddsList odds={myOdds} />
           </section>
-          <HistoryLog snapshot={snapshot} />
+          <HistoryLog snapshot={snapshot} excludeDay={result?.day} />
         </aside>
       </div>
     </main>

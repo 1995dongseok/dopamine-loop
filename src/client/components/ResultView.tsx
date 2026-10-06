@@ -4,6 +4,20 @@ import type { ActionId, DayResult, ResolutionEvent } from '../../shared/types';
 import { actionName, pct, signed, sortedOdds } from '../lib/rules';
 import { nameOf } from './common';
 
+// 밤 결과 애니메이션은 일차마다 한 번만 재생한다 (새로고침·재마운트 시 다시 재생하지 않음)
+const SHOWN_KEY = 'dopamine-loop.nightShown';
+const shownInMemory = new Set<string>();
+
+export function nightAnimationShown(key: string): boolean {
+  if (shownInMemory.has(key)) return true;
+  try { return sessionStorage.getItem(SHOWN_KEY) === key; } catch { return false; }
+}
+
+export function markNightAnimationShown(key: string): void {
+  shownInMemory.add(key);
+  try { sessionStorage.setItem(SHOWN_KEY, key); } catch { /* 저장소 사용 불가: 이 탭 메모리만 사용 */ }
+}
+
 const DAY_STEP = 0.35;
 const NIGHT_START = 1.4;
 const NIGHT_STEP = 0.7;
@@ -80,8 +94,9 @@ export function OddsList({ odds }: { odds: [ActionId, number][] }) {
   );
 }
 
-export function HistoryLog({ snapshot }: { snapshot: RoomSnapshot }) {
-  const history = snapshot.game?.history ?? [];
+/** 지난 일차 기록. excludeDay: 화면 본문에 이미 크게 표시 중인 날(중복 표시 방지) */
+export function HistoryLog({ snapshot, excludeDay }: { snapshot: RoomSnapshot; excludeDay?: number }) {
+  const history = (snapshot.game?.history ?? []).filter((r) => r.day !== excludeDay);
   if (history.length === 0) return null;
   return (
     <section className="panel">

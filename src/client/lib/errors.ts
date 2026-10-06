@@ -19,6 +19,7 @@ const MESSAGES: Record<ErrorCode | 'TIMEOUT', string> = {
   ALREADY_SUBMITTED: '이미 오늘 계획을 확정했습니다.',
   INVALID_PLAN: '계획이 올바르지 않습니다.',
   FORFEITED: '기권한 참가자는 조작할 수 없습니다.',
+  INTERNAL: '서버에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
   TIMEOUT: '서버 응답이 없습니다. 연결 상태를 확인해 주세요.',
 };
 
