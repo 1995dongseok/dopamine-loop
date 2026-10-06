@@ -1,0 +1,13 @@
+# /etc/caddy/Caddyfile 에 추가할 블록. Caddy 가 Let's Encrypt 인증서를 자동으로 받는다.
+# 도메인이 없으면 인스턴스 IP 를 대시로 적은 sslip.io 주소를 쓴다. Socket.IO(WebSocket)도 그대로 프록시된다.
+dopamine.example.com {
+    reverse_proxy 127.0.0.1:3000
+    encode gzip
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+}

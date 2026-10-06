@@ -51,14 +51,20 @@ npm run sim        # 밸런스 시뮬레이션
 | `TRUST_PROXY=1` | 프록시 뒤(Render 등)에서 X-Forwarded-For로 IP 판단 (속도 제한용) |
 | `DAY_SECONDS` / `NIGHT_RESULT_SECONDS` / `HOST_GRACE_SECONDS` | 시연·테스트용 시간 단축. 기본 45 / 8 / 30 |
 
-## 배포 (Render)
+## 배포 (Lightsail)
 
-1. 이 저장소를 GitHub에 올린다.
-2. Render에서 New → Blueprint로 저장소를 선택하면 `render.yaml` 설정(빌드 `npm ci --include=dev && npm run build`, 시작 `npm start`, 헬스체크 `/healthz`)으로 Web Service가 만들어진다.
-3. 반드시 **인스턴스 1개**로 운영한다. 상태가 메모리에만 있으므로 여러 인스턴스로 늘리면 방이 나뉜다.
+운영 주소: https://dopamine-43-202-248-147.sslip.io
+
+서울 리전 Ubuntu 인스턴스(43.202.248.147)에 systemd 서비스로 올리고, 기존 Caddy 가 HTTPS 를 붙인다. 설정 파일은 `deploy/` 에 있다.
+
+- 코드 갱신 (이 PC, PowerShell): `.\deploy\deploy.ps1 -HostName 43.202.248.147`
+  로컬에서 `npm run build` 후 `dist/`·`package*.json`·`deploy/` 를 `/opt/dopamine-loop` 에 올리고 `npm ci --omit=dev` 후 서비스를 재시작한다.
+- 최초 1회 (인스턴스에서): `sudo bash deploy/setup-server.sh <도메인>`
+  Node 24 설치, 서비스 등록, `/etc/caddy/Caddyfile` 에 블록 추가(백업 후 검증하고 reload). 도메인이 없으면 `dopamine-<IP 대시>.sslip.io`.
+- 서비스는 `127.0.0.1:3000` 에서 실행된다 (`deploy/dopamine-loop.service`). 반드시 프로세스 1개로 운영한다.
+- 상태: `systemctl status dopamine-loop` · 로그: `sudo journalctl -u dopamine-loop -f`
 
 ## 운영 한계
 
 - 서버 재시작·재배포 시 진행 중인 방과 재접속 정보가 사라진다.
 - 단일 인스턴스·단일 프로세스 전제.
-- Render 무료 플랜은 유휴 시 잠들어 첫 접속이 느리고, 잠들면 방도 사라진다.
