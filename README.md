@@ -48,7 +48,7 @@ npm run sim        # 밸런스 시뮬레이션
 | `PORT` / `HOST` | 기본 3000 / 0.0.0.0 |
 | `NODE_ENV=production` | 빌드된 화면(`dist/client`) 제공, Origin 제한 |
 | `ALLOWED_ORIGIN` | 추가 허용 Origin (쉼표 구분). 같은 호스트는 항상 허용 |
-| `TRUST_PROXY=1` | 프록시 뒤(Render 등)에서 X-Forwarded-For로 IP 판단 (속도 제한용) |
+| `TRUST_PROXY=1` | 프록시(Caddy) 뒤에서 X-Forwarded-For로 IP 판단 (속도 제한용) |
 | `DAY_SECONDS` / `NIGHT_RESULT_SECONDS` / `HOST_GRACE_SECONDS` | 시연·테스트용 시간 단축. 기본 45 / 8 / 30 |
 
 ## 배포 (Lightsail)
