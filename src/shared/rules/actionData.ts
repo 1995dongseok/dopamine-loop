@@ -57,83 +57,84 @@ export const ACTION_DATA: ActionDataMap = {
   // ── 즉시 ──
   drink: {
     stages: [
-      { from: 1, to: 2, score: 8 },
-      { from: 3, to: 4, score: 3 },
-      { from: 5, to: 6, score: -4 },
-      { from: 7, to: null, score: -8 },
+      { from: 1, to: 1, score: 7 },
+      { from: 2, to: 2, score: 3 },
+      { from: 3, to: 4, score: -4 },
+      { from: 5, to: null, score: -8 },
     ],
   },
   smoke: {
     stages: [
-      { from: 1, to: 2, score: 4 },
-      { from: 3, to: 5, score: 1 },
-      { from: 6, to: null, score: -2 },
+      { from: 1, to: 2, score: 3 },
+      { from: 3, to: 4, score: 0 },
+      { from: 5, to: null, score: -3 },
     ],
   },
   gamble: {
     stages: [
-      { from: 1, to: 2, winChance: 0.55, win: 9, loss: -3 },
-      { from: 3, to: 5, winChance: 0.4, win: 7, loss: -5 },
-      { from: 6, to: null, winChance: 0.25, win: 6, loss: -7 },
+      { from: 1, to: 2, winChance: 0.5, win: 9, loss: -3 },
+      { from: 3, to: 4, winChance: 0.35, win: 8, loss: -5 },
+      { from: 5, to: null, winChance: 0.2, win: 7, loss: -8 },
     ],
   },
   sns: {
     stages: [
-      { from: 1, to: 1, score: 5 },
-      { from: 2, to: 3, score: 2 },
-      { from: 4, to: 5, score: 0 },
-      { from: 6, to: null, score: -3 },
+      { from: 1, to: 1, score: 4 },
+      { from: 2, to: 2, score: 1 },
+      { from: 3, to: 4, score: -1 },
+      { from: 5, to: null, score: -4 },
     ],
   },
   shopping: {
     stages: [
-      { from: 1, to: 2, score: 7 },
-      { from: 3, to: 4, score: 2 },
-      { from: 5, to: null, score: -5 },
+      { from: 1, to: 1, score: 7 },
+      { from: 2, to: 2, score: 2 },
+      { from: 3, to: 3, score: -3 },
+      { from: 4, to: null, score: -6 },
     ],
     sameDayPenalty: -3,
   },
   binge_game: {
     stages: [
-      { from: 1, to: 2, score: 7 },
-      { from: 3, to: 4, score: 2 },
-      { from: 5, to: null, score: -5 },
+      { from: 1, to: 1, score: 7 },
+      { from: 2, to: 2, score: 2 },
+      { from: 3, to: 3, score: -3 },
+      { from: 4, to: null, score: -6 },
     ],
     streakPenalty: -3,
   },
   // ── 안정 ──
   walk: { score: 2, targetHabitDelta: -1 },
-  music: { score: 3, nightBonus: 2 },
+  music: { score: 2, nightBonus: 2 },
   cook: { score: 3, firstOfDayBonus: 2 },
   friends: { score: 3, minPlayers: 2, bonus: 3 },
-  volunteer: { score: 3, bonus: 3 },
+  volunteer: { score: 2, bonus: 5 },
   // ── 성장 ──
   study: {
     stages: [
       { from: 1, to: 2, score: 1, high: false },
       { from: 3, to: 4, score: 3, high: false },
-      { from: 5, to: 7, score: 7, high: true },
-      { from: 8, to: null, score: 10, high: true },
+      { from: 5, to: 7, score: 5, high: true },
+      { from: 8, to: null, score: 9, high: true },
     ],
-    baseScore: 1,
+    baseScore: 2,
   },
   exercise: {
     stages: [
       { from: 1, to: 3, score: 1 },
-      { from: 4, to: 6, score: 2 },
-      { from: 7, to: 10, score: 3 },
-      { from: 11, to: 15, score: 4 },
-      { from: 16, to: null, score: 5 },
+      { from: 4, to: 7, score: 2 },
+      { from: 8, to: 12, score: 3 },
+      { from: 13, to: null, score: 4 },
     ],
   },
   project: { score: 1, every: 3, bonus: 7 },
-  create: { score: 1, bonus: 10, chancePerUse: 0.05, chanceCap: 0.4 },
+  create: { score: 1, bonus: 10, chancePerUse: 0.04, chanceCap: 0.3 },
   relationship: {
     stages: [
       { from: 1, to: 2, score: 1, reachBonus: 0 },
-      { from: 3, to: 5, score: 2, reachBonus: 3 },
-      { from: 6, to: 9, score: 3, reachBonus: 5 },
-      { from: 10, to: null, score: 4, reachBonus: 8 },
+      { from: 3, to: 6, score: 2, reachBonus: 1 },
+      { from: 7, to: 12, score: 3, reachBonus: 2 },
+      { from: 13, to: null, score: 4, reachBonus: 3 },
     ],
   },
   // ── 회복 ──

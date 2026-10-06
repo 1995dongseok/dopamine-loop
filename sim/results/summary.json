@@ -1,0 +1,492 @@
+{
+  "rulesVersion": "1.0.0",
+  "numbersHash": "a25a5edeffc4ddf9",
+  "generatedBy": "npm run sim -- --seeds 1000",
+  "seedsPerPool": 1000,
+  "seedScheme": "pool: gameSeed=mixSeed(n,i), 좌석 전략=seededRng(mixSeed(gameSeed,99)); h2h: mixSeed(2000,a,b,i) 홀수 i 좌석 교대; pace: mixSeed(3000,s,i); bot rng=mixSeed(gameSeed,7919,seat), i=0..seeds-1",
+  "strategies": [
+    {
+      "id": "stable",
+      "label": "안정형 반복",
+      "description": "매일 [요리(최저 점수면 봉사), 친구 만나기, 음악 감상] 반복"
+    },
+    {
+      "id": "growth",
+      "label": "성장형 집중",
+      "description": "매일 [공부, 관계·연애, 관계·연애] 반복 (하루 1회 제한이 있는 공부 + 한 성장 행동에 집중)"
+    },
+    {
+      "id": "instant",
+      "label": "즉시 보상 순환",
+      "description": "슬롯마다 즉시 행동 6개 중 다음 회차 기대 점수가 가장 높은 것 (회복 없음)"
+    },
+    {
+      "id": "early_instant",
+      "label": "초반 즉시 후 성장 전환",
+      "description": "1~2일째 공부 1칸 + 남은 칸은 기대 점수 ≥5인 즉시 행동(없으면 성장 행동). 3일째부터 밤에 손해인 습관을 하루 1칸 회복(명상/휴식/디톡스/환경 바꾸기)하며 [공부, 프로젝트, 관계]"
+    },
+    {
+      "id": "mixed",
+      "label": "위험 증가 시 회복 혼합",
+      "description": "높은 초반 즉시 보상(기대 ≥5)은 하루 1개까지 쓰고, 손해 습관 비중 ≥30%면 명상/휴식/환경 바꾸기, 나머지는 [공부, 요리, 음악]"
+    },
+    {
+      "id": "greedy",
+      "label": "기대값 탐욕형",
+      "description": "슬롯마다 낮 기대 점수 + 밤 기대 점수 변화(남은 일수 가중, 최대 3일)를 최대화. 회복 포함"
+    }
+  ],
+  "pace": {
+    "stable": {
+      "reachRate": 1,
+      "avgReachDay": 5.05,
+      "avgDay10Score": 206
+    },
+    "growth": {
+      "reachRate": 1,
+      "avgReachDay": 6.15,
+      "avgDay10Score": 198
+    },
+    "instant": {
+      "reachRate": 0,
+      "avgReachDay": null,
+      "avgDay10Score": 0
+    },
+    "early_instant": {
+      "reachRate": 1,
+      "avgReachDay": 6.76,
+      "avgDay10Score": 174
+    },
+    "mixed": {
+      "reachRate": 1,
+      "avgReachDay": 5.94,
+      "avgDay10Score": 198
+    },
+    "greedy": {
+      "reachRate": 1,
+      "avgReachDay": 5.85,
+      "avgDay10Score": 188
+    }
+  },
+  "headToHead2p": {
+    "stable": {
+      "growth": 0.191,
+      "instant": 1,
+      "early_instant": 0.803,
+      "mixed": 0.313,
+      "greedy": 0.286
+    },
+    "growth": {
+      "stable": 0.775,
+      "instant": 1,
+      "early_instant": 0.782,
+      "mixed": 0.371,
+      "greedy": 0.464
+    },
+    "instant": {
+      "stable": 0,
+      "growth": 0,
+      "early_instant": 0,
+      "mixed": 0,
+      "greedy": 0
+    },
+    "early_instant": {
+      "stable": 0.2,
+      "growth": 0.185,
+      "instant": 1,
+      "mixed": 0.115,
+      "greedy": 0.162
+    },
+    "mixed": {
+      "stable": 0.715,
+      "growth": 0.609,
+      "instant": 1,
+      "early_instant": 0.879,
+      "greedy": 0.446
+    },
+    "greedy": {
+      "stable": 0.692,
+      "growth": 0.527,
+      "instant": 1,
+      "early_instant": 0.845,
+      "mixed": 0.546
+    }
+  },
+  "pools": {
+    "2p": {
+      "games": 1000,
+      "jointWinRate": 0.057,
+      "avgEndDay": 6.17,
+      "endDayDist": {
+        "5": 98,
+        "6": 727,
+        "7": 139,
+        "8": 6,
+        "10": 30
+      },
+      "day10Rate": 0.03,
+      "strategies": {
+        "mixed": {
+          "games": 314,
+          "wins": 225,
+          "winRate": 0.717,
+          "soloWins": 213,
+          "avgFinal": 108.1,
+          "reachRate": 0.901,
+          "avgReachDay": 5.99,
+          "recoveryDayRate": 0.093,
+          "winBeforeLossRate": 0.338
+        },
+        "instant": {
+          "games": 354,
+          "wins": 57,
+          "winRate": 0.161,
+          "soloWins": 3,
+          "avgFinal": 2.6,
+          "reachRate": 0,
+          "avgReachDay": null,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0
+        },
+        "early_instant": {
+          "games": 339,
+          "wins": 135,
+          "winRate": 0.398,
+          "soloWins": 129,
+          "avgFinal": 99.9,
+          "reachRate": 0.619,
+          "avgReachDay": 6.46,
+          "recoveryDayRate": 0.39,
+          "winBeforeLossRate": 0.118
+        },
+        "greedy": {
+          "games": 322,
+          "wins": 223,
+          "winRate": 0.693,
+          "soloWins": 209,
+          "avgFinal": 106.2,
+          "reachRate": 0.898,
+          "avgReachDay": 5.92,
+          "recoveryDayRate": 0.237,
+          "winBeforeLossRate": 0.27
+        },
+        "stable": {
+          "games": 321,
+          "wins": 192,
+          "winRate": 0.598,
+          "soloWins": 173,
+          "avgFinal": 104.2,
+          "reachRate": 0.897,
+          "avgReachDay": 5.94,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.598
+        },
+        "growth": {
+          "games": 350,
+          "wins": 225,
+          "winRate": 0.643,
+          "soloWins": 216,
+          "avgFinal": 103.9,
+          "reachRate": 0.897,
+          "avgReachDay": 6.05,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.643
+        }
+      },
+      "actionRate": {
+        "drink": 0.04,
+        "smoke": 0.106,
+        "gamble": 0.04,
+        "sns": 0.036,
+        "shopping": 0.039,
+        "binge_game": 0.038,
+        "walk": 0.005,
+        "music": 0.11,
+        "cook": 0.077,
+        "friends": 0.07,
+        "volunteer": 0.055,
+        "study": 0.174,
+        "exercise": 0,
+        "project": 0.039,
+        "create": 0,
+        "relationship": 0.13,
+        "rest": 0,
+        "meditate": 0.04,
+        "detox": 0,
+        "change_env": 0
+      },
+      "categoryRate": {
+        "instant": 0.3,
+        "stable": 0.316,
+        "growth": 0.344,
+        "recovery": 0.04
+      },
+      "recoverySlotRate": 0.04,
+      "recoveryDayRate": 0.118,
+      "nightComebacksPerGame": 0.64,
+      "gamesWithNightComeback": 0.504,
+      "finalNightComebackRate": 0.051,
+      "lossRecovery": {
+        "x": 8,
+        "players": 377,
+        "wonRate": 0.164,
+        "reachedRate": 0.027
+      },
+      "lossRecoveryExInstant": {
+        "x": 8,
+        "players": 23,
+        "wonRate": 0.217,
+        "reachedRate": 0.435
+      }
+    },
+    "4p": {
+      "games": 1000,
+      "jointWinRate": 0.053,
+      "avgEndDay": 5.84,
+      "endDayDist": {
+        "5": 192,
+        "6": 778,
+        "7": 29,
+        "8": 1
+      },
+      "day10Rate": 0,
+      "strategies": {
+        "instant": {
+          "games": 693,
+          "wins": 0,
+          "winRate": 0,
+          "soloWins": 0,
+          "avgFinal": 4.4,
+          "reachRate": 0,
+          "avgReachDay": null,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0
+        },
+        "greedy": {
+          "games": 668,
+          "wins": 283,
+          "winRate": 0.424,
+          "soloWins": 272,
+          "avgFinal": 102.9,
+          "reachRate": 0.704,
+          "avgReachDay": 5.83,
+          "recoveryDayRate": 0.266,
+          "winBeforeLossRate": 0.228
+        },
+        "stable": {
+          "games": 669,
+          "wins": 188,
+          "winRate": 0.281,
+          "soloWins": 159,
+          "avgFinal": 102.2,
+          "reachRate": 0.697,
+          "avgReachDay": 5.79,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.281
+        },
+        "growth": {
+          "games": 670,
+          "wins": 199,
+          "winRate": 0.297,
+          "soloWins": 172,
+          "avgFinal": 101.5,
+          "reachRate": 0.784,
+          "avgReachDay": 6.02,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.297
+        },
+        "early_instant": {
+          "games": 634,
+          "wins": 86,
+          "winRate": 0.136,
+          "soloWins": 68,
+          "avgFinal": 93.3,
+          "reachRate": 0.371,
+          "avgReachDay": 6.15,
+          "recoveryDayRate": 0.387,
+          "winBeforeLossRate": 0.084
+        },
+        "mixed": {
+          "games": 666,
+          "wins": 297,
+          "winRate": 0.446,
+          "soloWins": 276,
+          "avgFinal": 103.1,
+          "reachRate": 0.688,
+          "avgReachDay": 5.92,
+          "recoveryDayRate": 0.099,
+          "winBeforeLossRate": 0.237
+        }
+      },
+      "actionRate": {
+        "drink": 0.042,
+        "smoke": 0.081,
+        "gamble": 0.043,
+        "sns": 0.037,
+        "shopping": 0.041,
+        "binge_game": 0.041,
+        "walk": 0.004,
+        "music": 0.12,
+        "cook": 0.106,
+        "friends": 0.074,
+        "volunteer": 0.029,
+        "study": 0.175,
+        "exercise": 0,
+        "project": 0.036,
+        "create": 0,
+        "relationship": 0.128,
+        "rest": 0,
+        "meditate": 0.044,
+        "detox": 0,
+        "change_env": 0
+      },
+      "categoryRate": {
+        "instant": 0.285,
+        "stable": 0.333,
+        "growth": 0.339,
+        "recovery": 0.044
+      },
+      "recoverySlotRate": 0.044,
+      "recoveryDayRate": 0.123,
+      "nightComebacksPerGame": 0.936,
+      "gamesWithNightComeback": 0.651,
+      "finalNightComebackRate": 0.076,
+      "lossRecovery": {
+        "x": 8,
+        "players": 747,
+        "wonRate": 0,
+        "reachedRate": 0.009
+      },
+      "lossRecoveryExInstant": {
+        "x": 8,
+        "players": 54,
+        "wonRate": 0,
+        "reachedRate": 0.13
+      }
+    },
+    "6p": {
+      "games": 1000,
+      "jointWinRate": 0.081,
+      "avgEndDay": 5.66,
+      "endDayDist": {
+        "5": 351,
+        "6": 642,
+        "7": 7
+      },
+      "day10Rate": 0,
+      "strategies": {
+        "mixed": {
+          "games": 986,
+          "wins": 271,
+          "winRate": 0.275,
+          "soloWins": 246,
+          "avgFinal": 99.8,
+          "reachRate": 0.583,
+          "avgReachDay": 5.9,
+          "recoveryDayRate": 0.105,
+          "winBeforeLossRate": 0.173
+        },
+        "greedy": {
+          "games": 1002,
+          "wins": 313,
+          "winRate": 0.312,
+          "soloWins": 286,
+          "avgFinal": 99.3,
+          "reachRate": 0.563,
+          "avgReachDay": 5.74,
+          "recoveryDayRate": 0.281,
+          "winBeforeLossRate": 0.196
+        },
+        "stable": {
+          "games": 1087,
+          "wins": 326,
+          "winRate": 0.3,
+          "soloWins": 241,
+          "avgFinal": 102.6,
+          "reachRate": 0.672,
+          "avgReachDay": 5.64,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.3
+        },
+        "instant": {
+          "games": 959,
+          "wins": 0,
+          "winRate": 0,
+          "soloWins": 0,
+          "avgFinal": 6.1,
+          "reachRate": 0,
+          "avgReachDay": null,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0
+        },
+        "growth": {
+          "games": 968,
+          "wins": 119,
+          "winRate": 0.123,
+          "soloWins": 100,
+          "avgFinal": 97.6,
+          "reachRate": 0.659,
+          "avgReachDay": 6.01,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.123
+        },
+        "early_instant": {
+          "games": 998,
+          "wins": 56,
+          "winRate": 0.056,
+          "soloWins": 46,
+          "avgFinal": 89,
+          "reachRate": 0.247,
+          "avgReachDay": 6.05,
+          "recoveryDayRate": 0.41,
+          "winBeforeLossRate": 0.041
+        }
+      },
+      "actionRate": {
+        "drink": 0.043,
+        "smoke": 0.072,
+        "gamble": 0.041,
+        "sns": 0.035,
+        "shopping": 0.041,
+        "binge_game": 0.042,
+        "walk": 0.004,
+        "music": 0.126,
+        "cook": 0.113,
+        "friends": 0.076,
+        "volunteer": 0.024,
+        "study": 0.176,
+        "exercise": 0,
+        "project": 0.037,
+        "create": 0,
+        "relationship": 0.123,
+        "rest": 0,
+        "meditate": 0.047,
+        "detox": 0,
+        "change_env": 0
+      },
+      "categoryRate": {
+        "instant": 0.274,
+        "stable": 0.344,
+        "growth": 0.336,
+        "recovery": 0.047
+      },
+      "recoverySlotRate": 0.047,
+      "recoveryDayRate": 0.133,
+      "nightComebacksPerGame": 0.986,
+      "gamesWithNightComeback": 0.667,
+      "finalNightComebackRate": 0.089,
+      "lossRecovery": {
+        "x": 8,
+        "players": 1031,
+        "wonRate": 0,
+        "reachedRate": 0.003
+      },
+      "lossRecoveryExInstant": {
+        "x": 8,
+        "players": 72,
+        "wonRate": 0,
+        "reachedRate": 0.042
+      }
+    }
+  }
+}
