@@ -1,0 +1,5 @@
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: { globals: true, include: ['src/**/*.test.ts', 'test/**/*.test.ts', 'sim/**/*.test.ts'], testTimeout: 20000 },
+});
