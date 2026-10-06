@@ -1,0 +1,97 @@
+// 카드 표시·예상 밤 확률. 상태를 변경하지 않는다.
+import type { ActionId, ActionPreview, Counts, Plan, PlayerRuleState } from '../types';
+import { ACTION_DATA as D, type Stage } from './actionData';
+import { dayHabitOps } from './effects';
+import { findStage, sign } from './meta';
+import { habitDistribution } from './resolve';
+import { normalizePlan } from './validate';
+
+const pct = (p: number): string => `${Math.round(p * 100)}%`;
+
+function stageLabel<S extends { from: number; to: number | null }>(stages: S[], use: number, valueOf: (s: S) => string): string {
+  const s = findStage(stages, use);
+  const idx = stages.indexOf(s);
+  const nextStage = stages[idx + 1];
+  const head = `${idx + 1}단계`;
+  return nextStage ? `${head} · ${nextStage.from}회째부터 ${valueOf(nextStage)}` : `${head} · 최종 단계`;
+}
+const scoreOf = (s: Stage): string => sign(s.score);
+
+/**
+ * 이 행동을 다음에 쓸 때의 결과 범위. 상황에 따라 달라지는 보너스·감점(같은 날 재사용, 연속, 밤 보너스,
+ * 공동 보너스, 확률, 하루 1회 고단계)은 min~max 범위에 포함하고 label에 조건을 적는다.
+ */
+export function previewAction(player: PlayerRuleState, actionId: ActionId): ActionPreview {
+  const use = (player.uses?.[actionId] ?? 0) + 1;
+  const r = (min: number, max: number, label: string): ActionPreview => ({ actionId, nextUse: use, min, max, label });
+
+  switch (actionId) {
+    case 'drink':
+    case 'smoke':
+    case 'sns':
+    case 'exercise': {
+      const stages = D[actionId].stages;
+      const v = findStage(stages, use).score;
+      return r(v, v, stageLabel(stages, use, scoreOf));
+    }
+    case 'gamble': {
+      const s = findStage(D.gamble.stages, use);
+      return r(s.loss, s.win, `승률 ${pct(s.winChance)} · ${stageLabel(D.gamble.stages, use, (n) => `승률 ${pct(n.winChance)}`)}`);
+    }
+    case 'shopping': {
+      const v = findStage(D.shopping.stages, use).score;
+      return r(v + D.shopping.sameDayPenalty, v, `${stageLabel(D.shopping.stages, use, scoreOf)} · 같은 날 재사용 ${sign(D.shopping.sameDayPenalty)}`);
+    }
+    case 'binge_game': {
+      const v = findStage(D.binge_game.stages, use).score;
+      return r(v + D.binge_game.streakPenalty, v, `${stageLabel(D.binge_game.stages, use, scoreOf)} · 연속 사용 ${sign(D.binge_game.streakPenalty)}`);
+    }
+    case 'walk': return r(D.walk.score, D.walk.score, `고정 · 낮에 대상 습관 ${sign(D.walk.targetHabitDelta)}`);
+    case 'music': return r(D.music.score, D.music.score + D.music.nightBonus, `고정 · 밤 ${sign(D.music.nightBonus)}`);
+    case 'cook': return r(D.cook.score, D.cook.score + D.cook.firstOfDayBonus, `고정 · 그날 첫 사용 ${sign(D.cook.firstOfDayBonus)}`);
+    case 'friends': return r(D.friends.score, D.friends.score + D.friends.bonus, `고정 · 같은 슬롯 ${D.friends.minPlayers}명↑ ${sign(D.friends.bonus)}`);
+    case 'volunteer': return r(D.volunteer.score, D.volunteer.score + D.volunteer.bonus, `고정 · 최저 점수면 ${sign(D.volunteer.bonus)}`);
+    case 'study': {
+      const s = findStage(D.study.stages, use);
+      const label = stageLabel(D.study.stages, use, scoreOf);
+      if (!s.high) return r(s.score, s.score, label);
+      return r(D.study.baseScore, s.score, `${label} · 고단계 하루 1회`);
+    }
+    case 'project': {
+      const bonus = use % D.project.every === 0;
+      const v = D.project.score + (bonus ? D.project.bonus : 0);
+      const at = Math.ceil(use / D.project.every) * D.project.every;
+      return r(v, v, bonus ? `이번에 완료 보너스 ${sign(D.project.bonus)}` : `${at}회째 완료 ${sign(D.project.bonus)}`);
+    }
+    case 'create': {
+      const chance = Math.min(D.create.chancePerUse * use, D.create.chanceCap);
+      return r(D.create.score, D.create.score + D.create.bonus, `완성 확률 ${pct(chance)}`);
+    }
+    case 'relationship': {
+      const s = findStage(D.relationship.stages, use);
+      const v = s.score + (use === s.from ? s.reachBonus : 0);
+      return r(v, v, stageLabel(D.relationship.stages, use, (n) => `${sign(n.score)}, 도달 ${sign(n.reachBonus)}`));
+    }
+    case 'rest': return r(D.rest.score, D.rest.score, `낮에 대상 습관 ${sign(D.rest.targetHabitDelta)}`);
+    case 'meditate': return r(D.meditate.score, D.meditate.score, `낮에 대상 습관 ${sign(D.meditate.targetHabitDelta)}`);
+    case 'detox': return r(D.detox.score, D.detox.score, '낮에 SNS·게임 습관 감소');
+    case 'change_env': return r(D.change_env.score, D.change_env.score, '행동력 2 · 대상 습관 0으로');
+  }
+}
+
+/** 낮 계획이 습관에 주는 변화를 슬롯 순서대로 적용한 습관 (상태 불변) */
+export function habitsAfterPlan(player: PlayerRuleState, plan?: Plan | null): Counts {
+  const habits: Counts = { ...(player.habits ?? {}) };
+  const p = plan ? normalizePlan(plan) : null;
+  if (!p) return habits;
+  for (const s of p.slots) {
+    if (!s) continue;
+    for (const op of dayHabitOps(s.actionId, s.targetId)) habits[op.id] = Math.max(0, op.apply(habits[op.id] ?? 0));
+  }
+  return habits;
+}
+
+/** 예상 밤 확률: 현재 습관에 계획(낮 실행분 습관 증가·회복 감소)을 반영한 분포. 0~1, 0인 행동은 생략 */
+export function nightOdds(player: PlayerRuleState, plan?: Plan | null): Counts {
+  return habitDistribution(habitsAfterPlan(player, plan));
+}
