@@ -53,14 +53,14 @@ npm run sim        # 밸런스 시뮬레이션
 
 ## 배포 (Lightsail)
 
-운영 주소: https://dopamine-43-202-248-147.sslip.io
+운영 주소: https://dopamine-loop.duckdns.org
 
 서울 리전 Ubuntu 인스턴스(43.202.248.147)에 systemd 서비스로 올리고, 기존 Caddy 가 HTTPS 를 붙인다. 설정 파일은 `deploy/` 에 있다.
 
 - 코드 갱신 (이 PC, PowerShell): `.\deploy\deploy.ps1 -HostName 43.202.248.147`
   로컬에서 `npm run build` 후 `dist/`·`package*.json`·`deploy/` 를 `/opt/dopamine-loop` 에 올리고 `npm ci --omit=dev` 후 서비스를 재시작한다.
 - 최초 1회 (인스턴스에서): `sudo bash deploy/setup-server.sh <도메인>`
-  Node 24 설치, 서비스 등록, `/etc/caddy/Caddyfile` 에 블록 추가(백업 후 검증하고 reload). 도메인이 없으면 `dopamine-<IP 대시>.sslip.io`.
+  Node 24 설치, 서비스 등록, `/etc/caddy/Caddyfile` 에 블록 추가(백업 후 검증하고 reload). 현재 도메인은 DuckDNS `dopamine-loop.duckdns.org` (도메인이 없으면 `dopamine-<IP 대시>.sslip.io` 도 가능).
 - 서비스는 `127.0.0.1:3000` 에서 실행된다 (`deploy/dopamine-loop.service`). 반드시 프로세스 1개로 운영한다.
 - 상태: `systemctl status dopamine-loop` · 로그: `sudo journalctl -u dopamine-loop -f`
 
