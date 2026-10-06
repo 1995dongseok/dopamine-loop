@@ -1,6 +1,6 @@
 // 행동별 처리 코드. 한 참가자의 한 행동을 (복사된) 상태에 적용하고 ResolutionEvent를 만든다.
-import type { ActionId, PlayerRuleState, ResolutionEvent, Rng } from '../types';
-import { ACTION_DATA as D } from './actionData';
+import type { ActionCategory, ActionId, PlayerRuleState, ResolutionEvent, Rng } from '../types';
+import { ACTION_DATA as D, RULE_DATA as R } from './actionData';
 import { DAILY_FLAG_PREFIX } from './constants';
 import { findStage, getAction, sign } from './meta';
 
@@ -16,11 +16,26 @@ export interface CoopContext {
   isLowest: boolean;
 }
 
-interface Part { value: number; note: string }
+/** studyHigh: 공부 고단계 보상을 받는 부분 (피로로 대체되지 않으면 하루 기록에 남긴다) */
+interface Part { value: number; note: string; studyHigh?: true }
+
+/** 초반 도파민 보너스: 이 일차에 즉시 행동의 양수 결과에 더하는 값 (일차 미지정·범위 밖이면 0) */
+export function earlyInstantBonus(day: number | undefined): number {
+  if (day === undefined || !Number.isInteger(day) || day < 1) return 0;
+  return R.instantEarlyBonus[day - 1] ?? 0;
+}
+
+/** 같은 날 반복 피로: 이 유형의 행동이 같은 날 dailyUseN회째(낮+밤 합산, 이번 사용 포함)일 때 피로인지 */
+export function isFatigued(category: ActionCategory, dailyUseN: number): boolean {
+  return (category === 'stable' || category === 'growth') && dailyUseN >= R.sameDayFatigue.fromDailyUse;
+}
+
+export const fatigueNote = (dailyUseN: number): string => `같은 날 ${dailyUseN}회째 피로: ${sign(R.sameDayFatigue.score)}`;
+export const earlyBonusNote = (bonus: number): string => `초반 보너스 ${sign(bonus)}`;
 
 const pctText = (p: number): string => `${Math.round(p * 100)}%`;
 
-/** 점수 부분(보상·보너스·감점) 계산. 상태는 읽기만 한다(study flag 제외). */
+/** 점수 부분(보상·보너스·감점) 계산. 상태는 읽기만 한다. */
 function scoreParts(
   p: PlayerRuleState, id: ActionId, phase: Phase, coop: CoopContext | null, rng: Rng,
 ): Part[] {
@@ -84,8 +99,7 @@ function scoreParts(
       if (p.flags[STUDY_HIGH_FLAG]) {
         return [{ value: D.study.baseScore, note: `${use}회째 고단계는 하루 1회: 기본 ${sign(D.study.baseScore)}` }];
       }
-      p.flags[STUDY_HIGH_FLAG] = 1;
-      return [{ value: s.score, note: `${use}회째 ${sign(s.score)} (오늘 고단계 사용)` }];
+      return [{ value: s.score, note: `${use}회째 ${sign(s.score)} (오늘 고단계 사용)`, studyHigh: true }];
     }
     case 'project': {
       const parts = [fixed(D.project.score)];
@@ -138,8 +152,9 @@ export function dayHabitOps(actionId: ActionId, targetId: ActionId | undefined):
 }
 
 /**
- * 한 행동을 적용한다 (p를 직접 변경). 순서: 점수(하한 보정) → 사용 횟수·하루 횟수 → 연속 사용
- * → (낮) 자기 습관 +1 → (낮) 대상 습관 감소.
+ * 한 행동을 적용한다 (p를 직접 변경). 순서: 점수(행동별 보상 → 같은 날 반복 피로 대체 → 초반 보너스,
+ * 하한 보정) → 사용 횟수·하루 횟수 → 연속 사용 → (낮) 자기 습관 +1 → (낮) 대상 습관 감소.
+ * day: 현재 일차(1부터). 초반 도파민 보너스에만 쓰며, 생략하면 보너스 없음.
  */
 export function applyAction(
   p: PlayerRuleState,
@@ -149,9 +164,21 @@ export function applyAction(
   index: number,
   coop: CoopContext | null,
   rng: Rng,
+  day?: number,
 ): ResolutionEvent {
   const meta = getAction(actionId);
-  const parts = scoreParts(p, actionId, phase, coop, rng);
+  // 확률 행동은 피로여도 난수를 그대로 1개 쓴다 (난수 순서 고정)
+  let parts = scoreParts(p, actionId, phase, coop, rng);
+  const dailyN = (p.dailyUses[actionId] ?? 0) + 1;
+  if (isFatigued(meta.category, dailyN)) {
+    parts = [{ value: R.sameDayFatigue.score, note: fatigueNote(dailyN) }];
+  } else if (parts.some((x) => x.studyHigh)) {
+    p.flags[STUDY_HIGH_FLAG] = 1;
+  }
+  if (meta.category === 'instant') {
+    const bonus = earlyInstantBonus(day);
+    if (bonus > 0 && parts.reduce((a, x) => a + x.value, 0) > 0) parts.push({ value: bonus, note: earlyBonusNote(bonus) });
+  }
   const notes = parts.map((x) => x.note);
   const raw = parts.reduce((a, x) => a + x.value, 0);
   const before = p.score;

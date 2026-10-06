@@ -86,10 +86,10 @@ export function slotsBefore(cells: Cells, cost: number): (PlanSlot | null)[] {
 
 /**
  * 카드 미리보기: 오늘 계획의 앞 칸들을 실제 규칙으로 시뮬레이션한 뒤 이 행동이 다음 빈 칸에 놓일 때의 결과.
- * 공동 보너스·확률 결과만 범위로 남는다(실제 결과는 서버가 확정).
+ * 공동 보너스·확률 결과만 범위로 남는다(실제 결과는 서버가 확정). day는 현재 일차(초반 보너스 반영용).
  */
-export function safePlannedPreview(me: PlayerRuleState, id: ActionId, cells: Cells): ActionPreview | null {
-  try { return previewPlannedAction(me, id, slotsBefore(cells, meta(id)?.cost ?? 1)); } catch { return null; }
+export function safePlannedPreview(me: PlayerRuleState, id: ActionId, cells: Cells, day?: number): ActionPreview | null {
+  try { return previewPlannedAction(me, id, slotsBefore(cells, meta(id)?.cost ?? 1), day); } catch { return null; }
 }
 
 /** 계획을 낮에 실행한 뒤의 습관 (대상 선택 화면 표시용) */

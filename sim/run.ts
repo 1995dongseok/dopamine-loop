@@ -4,12 +4,12 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { RULES_VERSION } from '../src/shared/types';
-import { ACTION_DATA, GAME_CONSTANTS, getAction, seededRng } from '../src/shared/rules';
+import { ACTION_DATA, GAME_CONSTANTS, RULE_DATA, getAction, seededRng } from '../src/shared/rules';
 import { mixSeed, playGame, summarize, type GameRecord, type Summary } from './engine';
 import { STRATEGIES } from './strategies';
 
 export function numbersHash(): string {
-  return createHash('sha256').update(JSON.stringify({ ACTION_DATA, GAME_CONSTANTS })).digest('hex').slice(0, 16);
+  return createHash('sha256').update(JSON.stringify({ ACTION_DATA, RULE_DATA, GAME_CONSTANTS })).digest('hex').slice(0, 16);
 }
 
 const IDS = STRATEGIES.map((s) => s.id);

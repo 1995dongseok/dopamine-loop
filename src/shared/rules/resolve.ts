@@ -68,7 +68,7 @@ export function resolveDay(
       const slots = planOf.get(p.playerId)!.slots;
       const s = slots[slot];
       if (s) {
-        dayEvents.push(applyAction(p, s.actionId, s.targetId, 'day', slot, { friendsCount, isLowest: lowest.has(p.playerId) }, rng));
+        dayEvents.push(applyAction(p, s.actionId, s.targetId, 'day', slot, { friendsCount, isLowest: lowest.has(p.playerId) }, rng, day));
       } else {
         const prev = slot > 0 ? slots[slot - 1] : null;
         const consumed = prev !== null && getAction(prev.actionId).cost === 2;
@@ -85,7 +85,7 @@ export function resolveDay(
     for (let d = 0; d < GAME_CONSTANTS.nightDraws; d++) {
       const drawn = drawHabit(p.habits, rng);
       if (drawn === null) nightEvents.push(applyNoAction(p, 'night', d, '습관 없음: 무행동'));
-      else nightEvents.push(applyAction(p, drawn, undefined, 'night', d, null, rng));
+      else nightEvents.push(applyAction(p, drawn, undefined, 'night', d, null, rng, day));
     }
   }
 

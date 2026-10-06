@@ -1,6 +1,6 @@
 // ACTIONS 메타데이터. 카드 설명은 actionData의 수치에서 생성하므로 항상 실제 효과와 일치한다.
 import { ACTION_IDS, type ActionId, type ActionMeta } from '../types';
-import { ACTION_BASE, ACTION_DATA as D, type Stage } from './actionData';
+import { ACTION_BASE, ACTION_DATA as D, RULE_DATA as R, type Stage } from './actionData';
 
 export const sign = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 const pct = (p: number): string => `${Math.round(p * 100)}%`;
@@ -28,7 +28,7 @@ function describe(id: ActionId): string {
       const high = D.study.stages.filter((s) => s.high).map((s) => sign(s.score)).join('·');
       return `${stagesText(D.study.stages)} (${high} 보상은 하루 1회, 이후 ${sign(D.study.baseScore)})`;
     }
-    case 'exercise': return `${stagesText(D.exercise.stages)}, 일일 제한 없음`;
+    case 'exercise': return `${stagesText(D.exercise.stages)}, 하루 1회 제한 없음`;
     case 'project': return `${sign(D.project.score)}, 누적 ${D.project.every}의 배수 회째 완료 ${sign(D.project.bonus)}`;
     case 'create':
       return `${sign(D.create.score)}, 완성 ${sign(D.create.bonus)} 확률 회차×${pct(D.create.chancePerUse)} (최대 ${pct(D.create.chanceCap)})`;
@@ -46,10 +46,24 @@ function describe(id: ActionId): string {
   }
 }
 
+/** 유형 공통 규칙 문구: 즉시 = 초반 도파민 보너스, 안정·성장 = 같은 날 반복 피로 */
+function commonRuleText(category: ActionMeta['category']): string {
+  if (category === 'instant') {
+    const b = R.instantEarlyBonus.filter((v) => v > 0);
+    if (!b.length) return '';
+    const days = b.length === 1 ? '1일째' : `1~${b.length}일째`;
+    return ` · 초반 보너스: ${days} 결과가 양수면 ${b.map(sign).join('/')}`;
+  }
+  if (category === 'stable' || category === 'growth') {
+    return ` · 같은 날 ${R.sameDayFatigue.fromDailyUse}회째부터 피로: ${sign(R.sameDayFatigue.score)}만`;
+  }
+  return '';
+}
+
 export const ACTIONS: ActionMeta[] = ACTION_BASE.map((b) => ({
   ...b,
   formsHabit: b.category !== 'recovery',
-  description: describe(b.id),
+  description: describe(b.id) + commonRuleText(b.category),
 }));
 
 const BY_ID = new Map<string, ActionMeta>(ACTIONS.map((a) => [a.id, a]));

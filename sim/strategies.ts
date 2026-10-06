@@ -25,7 +25,7 @@ class Builder {
   slots: (PlanSlot | null)[] = [null, null, null];
   i = 0;
   ps: PlanState;
-  constructor(me: PlayerRuleState) { this.ps = planStateOf(me); }
+  constructor(me: PlayerRuleState, day: number) { this.ps = planStateOf(me, day); }
   get free(): number { return 3 - this.i; }
   add(actionId: ActionId, targetId?: ActionId): this {
     const cost = getAction(actionId).cost;
@@ -75,14 +75,14 @@ const stable: Strategy = {
   id: 'stable',
   label: '안정형 반복',
   description: '매일 [요리(최저 점수면 봉사), 친구 만나기, 음악 감상] 반복',
-  plan: (ctx) => new Builder(ctx.me).add(isLowest(ctx) ? 'volunteer' : 'cook').add('friends').add('music').plan(),
+  plan: (ctx) => new Builder(ctx.me, ctx.day).add(isLowest(ctx) ? 'volunteer' : 'cook').add('friends').add('music').plan(),
 };
 
 const growth: Strategy = {
   id: 'growth',
   label: '성장형 집중',
   description: '매일 [공부, 관계·연애, 관계·연애] 반복 (하루 1회 제한이 있는 공부 + 한 성장 행동에 집중)',
-  plan: (ctx) => new Builder(ctx.me).add('study').add('relationship').add('relationship').plan(),
+  plan: (ctx) => new Builder(ctx.me, ctx.day).add('study').add('relationship').add('relationship').plan(),
 };
 
 const instant: Strategy = {
@@ -90,7 +90,7 @@ const instant: Strategy = {
   label: '즉시 보상 순환',
   description: '슬롯마다 즉시 행동 6개 중 다음 회차 기대 점수가 가장 높은 것 (회복 없음)',
   plan: (ctx) => {
-    const b = new Builder(ctx.me);
+    const b = new Builder(ctx.me, ctx.day);
     while (b.free > 0) instantSlot(b);
     return b.plan();
   },
@@ -101,7 +101,7 @@ const earlyInstant: Strategy = {
   label: '초반 즉시 후 성장 전환',
   description: '1~2일째 공부 1칸 + 남은 칸은 기대 점수 ≥5인 즉시 행동(없으면 성장 행동). 3일째부터 밤에 손해인 습관을 하루 1칸 회복(명상/휴식/디톡스/환경 바꾸기)하며 [공부, 프로젝트, 관계]',
   plan: (ctx) => {
-    const b = new Builder(ctx.me);
+    const b = new Builder(ctx.me, ctx.day);
     const growthFill = (): void => { for (const a of ['study', 'project', 'relationship'] as ActionId[]) b.add(a); };
     if (ctx.day <= 2) {
       // 공부로 성장 투자를 시작하고 나머지 칸은 기대 점수 ≥5인 즉시 행동(첫 사용 위주)
@@ -130,7 +130,7 @@ const mixed: Strategy = {
   label: '위험 증가 시 회복 혼합',
   description: '높은 초반 즉시 보상(기대 ≥5)은 하루 1개까지 쓰고, 손해 습관 비중 ≥30%면 명상/휴식/환경 바꾸기, 나머지는 [공부, 요리, 음악]',
   plan: (ctx) => {
-    const b = new Builder(ctx.me);
+    const b = new Builder(ctx.me, ctx.day);
     recoverIfRisky(b, 0.3);
     const inst = bestOf(b.ps, INSTANT, { phase: 'day' });
     if (b.free > 0 && inst.v >= 5) b.add(inst.id);
@@ -145,7 +145,7 @@ const greedy: Strategy = {
   label: '기대값 탐욕형',
   description: '슬롯마다 낮 기대 점수 + 밤 기대 점수 변화(남은 일수 가중, 최대 3일)를 최대화. 회복 포함',
   plan: (ctx) => {
-    const b = new Builder(ctx.me);
+    const b = new Builder(ctx.me, ctx.day);
     const remaining = GAME_CONSTANTS.maxDays - ctx.day + 1;
     const w = 2 * Math.min(3, remaining); // 하루 밤 2회 × 가중 일수
     const lowest = isLowest(ctx);
@@ -176,5 +176,16 @@ const greedy: Strategy = {
   },
 };
 
-export const STRATEGIES: Strategy[] = [stable, growth, instant, earlyInstant, mixed, greedy];
+/** 한 행동만 매일 3칸 반복 (집중 습관 → 밤 추첨도 같은 행동으로 몰리는지 점검용) */
+const repeat = (id: ActionId, label: string): Strategy => ({
+  id: `repeat_${id}`,
+  label: `${label}만 반복`,
+  description: `매일 [${label}, ${label}, ${label}] 반복`,
+  plan: (ctx) => new Builder(ctx.me, ctx.day).add(id).add(id).add(id).plan(),
+});
+
+export const STRATEGIES: Strategy[] = [
+  stable, growth, instant, earlyInstant, mixed, greedy,
+  repeat('relationship', '관계·연애'), repeat('exercise', '운동'), repeat('study', '공부'), repeat('music', '음악 감상'),
+];
 export const STRATEGY_BY_ID = new Map(STRATEGIES.map((s) => [s.id, s]));

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ACTION_IDS, type ActionId, type Counts, type Plan, type PlanSlot, type PlayerRuleState, type Rng } from '../types';
 import {
-  ACTIONS, GAME_CONSTANTS, checkWinner, createPlayerState, emptyPlan, getAction, nightOdds, previewAction,
-  resolveDay, seededRng, validatePlan,
+  ACTIONS, ACTION_DATA as D, GAME_CONSTANTS, RULE_DATA, checkWinner, createPlayerState, emptyPlan, getAction, nightOdds,
+  previewAction, resolveDay, seededRng, validatePlan,
 } from './index';
+import { findStage } from './meta';
+
+/** 초반 도파민 보너스가 끝난 첫 일차 (기본 수치 검사용) */
+const LATE = RULE_DATA.instantEarlyBonus.length + 1;
 
 // ── 도우미 ──
 type SlotIn = ActionId | [ActionId, ActionId] | null;
@@ -34,13 +38,15 @@ describe('메타데이터', () => {
     expect(ACTIONS.filter((a) => !a.formsHabit).every((a) => a.category === 'recovery')).toBe(true);
   });
   it('설명에 실제 수치가 들어 있다', () => {
-    expect(getAction('drink').description).toBe('1회 +7 → 2회 +3 → 3~4회 -4 → 5회~ -8');
+    expect(getAction('drink').description).toBe('1회 +7 → 2회 +3 → 3~4회 -4 → 5회~ -8 · 초반 보너스: 1~2일째 결과가 양수면 +3/+2');
+    expect(getAction('relationship').description).toContain('같은 날 5회째부터 피로: +1만');
+    expect(getAction('rest').description).not.toContain('피로');
   });
 });
 
 describe('보상 단계 경계', () => {
   const drinkAt = (uses: number) => {
-    const r = resolveDay([player('a', { score: 50, uses: { drink: uses } }), player('b')], { a: plan('drink') }, 1, seededRng(1));
+    const r = resolveDay([player('a', { score: 50, uses: { drink: uses } }), player('b')], { a: plan('drink') }, LATE, seededRng(1));
     return dayEv(r, 'a')[0];
   };
   it('음주: 1회 +7, 2회 +3, 3~4회 -4, 5회~ -8', () => {
@@ -60,23 +66,23 @@ describe('보상 단계 경계', () => {
   });
   it('프로젝트: 3의 배수 회째 완료 보너스', () => {
     const r = resolveDay([player('a', { uses: { project: 1 } })], { a: plan('project', 'project', 'project') }, 1, seededRng(1));
-    expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([1, 8, 1]);
+    expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([2, 9, 2]);
   });
   it('관계: 단계 진입 회차에 도달 보너스', () => {
     const r = resolveDay([player('a', { uses: { relationship: 1 } })], { a: plan('relationship', 'relationship', 'relationship') }, 1, seededRng(1));
-    expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([1, 2 + 1, 2]);
+    expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([1, 2 + 2, 2]);
   });
   it('도박·창작은 난수로 결과가 갈린다', () => {
-    const win = resolveDay([player('a', { score: 10 })], { a: plan('gamble', 'create') }, 1, fixedRng(0));
+    const win = resolveDay([player('a', { score: 10 })], { a: plan('gamble', 'create') }, LATE, fixedRng(0));
     expect(dayEv(win, 'a').slice(0, 2).map((e) => e.delta)).toEqual([9, 11]);
-    const lose = resolveDay([player('a', { score: 10 })], { a: plan('gamble', 'create') }, 1, fixedRng(0.999));
+    const lose = resolveDay([player('a', { score: 10 })], { a: plan('gamble', 'create') }, LATE, fixedRng(0.999));
     expect(dayEv(lose, 'a').slice(0, 2).map((e) => e.delta)).toEqual([-3, 1]);
   });
 });
 
 describe('점수 하한', () => {
   it('개별 행동마다 0 미만을 0으로 보정한다', () => {
-    const r = resolveDay([player('a', { score: 2, uses: { drink: 6 } })], { a: plan('drink', 'smoke') }, 1, seededRng(1));
+    const r = resolveDay([player('a', { score: 2, uses: { drink: 6 } })], { a: plan('drink', 'smoke') }, LATE, seededRng(1));
     const [e0, e1] = dayEv(r, 'a');
     expect(e0.delta).toBe(-2);
     expect(e0.scoreAfter).toBe(0);
@@ -120,7 +126,7 @@ describe('회복', () => {
 
 describe('밤 정산', () => {
   it('같은 행동이 두 번 뽑히면 각각 다음 단계 보상', () => {
-    const r = resolveDay([player('a', { score: 20, uses: { drink: 1 }, habits: { drink: 3 } })], { a: emptyPlan() }, 1, seededRng(7));
+    const r = resolveDay([player('a', { score: 20, uses: { drink: 1 }, habits: { drink: 3 } })], { a: emptyPlan() }, LATE, seededRng(7));
     const ev = nightEv(r, 'a');
     expect(ev.map((e) => e.actionId)).toEqual(['drink', 'drink']);
     expect(ev.map((e) => e.delta)).toEqual([3, -4]);
@@ -142,7 +148,7 @@ describe('밤 정산', () => {
   });
   it('낮 전용 부가효과는 밤에 없다 (산책 대상·친구·봉사), 음악 밤 보너스는 있다', () => {
     const run = (id: ActionId) => nightEv(resolveDay([player('a', { habits: { [id]: 1, drink: 0 } }), player('b')], {}, 1, seededRng(3)), 'a');
-    expect(run('music').map((e) => e.delta)).toEqual([4, 4]);
+    expect(run('music').map((e) => e.delta)).toEqual([5, 5]);
     expect(run('friends').map((e) => e.delta)).toEqual([3, 3]); // 둘 다 무행동이 아니어도 밤엔 보너스 없음
     expect(run('volunteer').map((e) => e.delta)).toEqual([2, 2]); // 최저 점수여도 밤엔 보너스 없음
     const w = resolveDay([player('a', { habits: { walk: 1 } })], {}, 1, seededRng(3));
@@ -161,22 +167,22 @@ describe('하루 단위 기록 (일일 제한·연속 사용)', () => {
     expect(nightEv(r2, 'a').map((e) => e.delta)).toEqual([9, 2]);
   });
   it('쇼핑 같은 날 재사용 감점은 낮·밤을 합산한다', () => {
-    const r = resolveDay([player('a', { score: 30, habits: { shopping: 5 } })], { a: plan('shopping') }, 1, seededRng(1));
+    const r = resolveDay([player('a', { score: 30, habits: { shopping: 5 } })], { a: plan('shopping') }, LATE, seededRng(1));
     expect(dayEv(r, 'a')[0].delta).toBe(7);
     expect(nightEv(r, 'a').map((e) => e.delta)).toEqual([2 - 3, -3 - 3]);
     expect(stateOf(r, 'a').dailyUses.shopping).toBe(3);
   });
   it('요리 첫 사용 보너스는 그날 한 번', () => {
     const r = resolveDay([player('a')], { a: plan('cook', 'cook') }, 1, seededRng(1));
-    expect(dayEv(r, 'a').slice(0, 2).map((e) => e.delta)).toEqual([5, 3]);
+    expect(dayEv(r, 'a').slice(0, 2).map((e) => e.delta)).toEqual([5, 2]);
   });
   it('게임 몰아하기 연속 감점: 낮→밤으로 이어지고 무행동·회복이 끊는다', () => {
-    const r = resolveDay([player('a', { score: 30, habits: { binge_game: 9 } })], { a: plan('binge_game', 'binge_game', null) }, 1, seededRng(1));
+    const r = resolveDay([player('a', { score: 30, habits: { binge_game: 9 } })], { a: plan('binge_game', 'binge_game', null) }, LATE, seededRng(1));
     expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([7, 2 - 3, 0]);
     // 슬롯 2 무행동이 연속을 끊었으므로 밤 첫 회는 감점 없음, 두 번째는 연속
     expect(nightEv(r, 'a').map((e) => e.delta)).toEqual([-3, -6 - 3]);
 
-    const r2 = resolveDay([player('a', { score: 30, habits: { binge_game: 9 } })], { a: plan('binge_game', ['meditate', 'drink'], 'binge_game') }, 1, seededRng(1));
+    const r2 = resolveDay([player('a', { score: 30, habits: { binge_game: 9 } })], { a: plan('binge_game', ['meditate', 'drink'], 'binge_game') }, LATE, seededRng(1));
     expect(dayEv(r2, 'a').map((e) => e.delta)).toEqual([7, 1, 2]);
     expect(nightEv(r2, 'a')[0].delta).toBe(-3 - 3); // 낮 마지막 → 밤 첫 회 연속
   });
@@ -321,7 +327,7 @@ describe('미리보기·예상 확률', () => {
     expect(previewAction(player('a'), 'gamble')).toMatchObject({ nextUse: 1, min: -3, max: 9 });
     expect(previewAction(player('a'), 'shopping')).toMatchObject({ min: 4, max: 7 });
     expect(previewAction(player('a', { uses: { study: 7 } }), 'study')).toMatchObject({ min: 2, max: 9 });
-    expect(previewAction(player('a', { uses: { project: 2 } }), 'project')).toMatchObject({ min: 8, max: 8 });
+    expect(previewAction(player('a', { uses: { project: 2 } }), 'project')).toMatchObject({ min: 9, max: 9 });
     for (const id of ACTION_IDS) {
       const pv = previewAction(player('a'), id);
       expect(pv.min).toBeLessThanOrEqual(pv.max);
@@ -418,9 +424,106 @@ describe('docs/RULES.md 예시 한 턴', () => {
     }, 3, rng);
     expect(dayEv(r, 'A').map((e) => e.scoreAfter)).toEqual([35, 41, 41]);
     expect(dayEv(r, 'B').map((e) => e.scoreAfter)).toEqual([31, 37, 34]);
-    expect(nightEv(r, 'A').map((e) => [e.actionId, e.scoreAfter])).toEqual([['study', 43], ['music', 47]]);
+    expect(nightEv(r, 'A').map((e) => [e.actionId, e.scoreAfter])).toEqual([['study', 43], ['music', 48]]);
     expect(nightEv(r, 'B').map((e) => [e.actionId, e.scoreAfter])).toEqual([['shopping', 25], ['friends', 28]]);
     expect(stateOf(r, 'A').habits).toEqual({ drink: 0, music: 2, study: 3, friends: 1 });
     expect(checkWinner(r.players, 3).finished).toBe(false);
+  });
+  it('예시 2: 1일째 초반 보너스와 같은 날 반복 피로', () => {
+    const vals = [0.1, 0.5, 0.3, 0.9];
+    let i = 0;
+    const rng: Rng = { next: () => vals[i++] };
+    const r = resolveDay([player('D'), player('C')], {
+      C: plan('drink', 'shopping', 'study'),
+      D: plan('exercise', 'exercise', 'exercise'),
+    }, 1, rng);
+    expect(dayEv(r, 'C').map((e) => e.delta)).toEqual([10, 10, 1]);
+    expect(dayEv(r, 'C')[0].notes).toContain('초반 보너스 +3');
+    expect(nightEv(r, 'C').map((e) => [e.actionId, e.delta, e.scoreAfter])).toEqual([['drink', 6, 27], ['shopping', -1, 26]]);
+    expect(dayEv(r, 'D').map((e) => e.delta)).toEqual([1, 1, 1]);
+    expect(nightEv(r, 'D').map((e) => [e.actionId, e.delta, e.scoreAfter])).toEqual([['exercise', 2, 5], ['exercise', 1, 6]]);
+    expect(nightEv(r, 'D')[1].notes).toEqual(['같은 날 5회째 피로: +1']);
+  });
+});
+
+describe('초반 도파민 보너스 (즉시 행동)', () => {
+  const B = RULE_DATA.instantEarlyBonus;
+  const drinkOn = (day: number, uses = 0) =>
+    dayEv(resolveDay([player('a', { score: 50, uses: { drink: uses } })], { a: plan('drink') }, day, seededRng(1)), 'a')[0];
+  it('결과가 양수면 일차별 보너스를 더하고, 보너스 기간이 지나면 0', () => {
+    const base = D.drink.stages[0].score;
+    for (let d = 1; d <= B.length + 2; d++) expect(drinkOn(d).delta, `${d}일째`).toBe(base + (B[d - 1] ?? 0));
+    expect(drinkOn(1).notes).toContain(`초반 보너스 +${B[0]}`);
+    expect(drinkOn(B.length + 1).notes.some((n) => n.includes('초반'))).toBe(false);
+  });
+  it('결과가 0 이하면 보너스 없음 (음수 단계·도박 패배·쇼핑 재사용 감점으로 음수)', () => {
+    const neg = D.drink.stages.find((s) => s.score < 0)!;
+    expect(drinkOn(1, neg.from - 1).delta).toBe(neg.score);
+    const lose = resolveDay([player('a', { score: 30 })], { a: plan('gamble') }, 1, fixedRng(0.999));
+    expect(dayEv(lose, 'a')[0].delta).toBe(D.gamble.stages[0].loss);
+    const win = resolveDay([player('a', { score: 30 })], { a: plan('gamble') }, 1, fixedRng(0));
+    expect(dayEv(win, 'a')[0].delta).toBe(D.gamble.stages[0].win + B[0]);
+    // 쇼핑 2회째 단계 점수는 양수지만 같은 날 재사용 감점을 합친 결과가 0 이하이면 보너스 없음
+    const shop = resolveDay([player('a', { score: 30 })], { a: plan('shopping', 'shopping') }, 1, seededRng(1));
+    const second = findStage(D.shopping.stages, 2).score + D.shopping.sameDayPenalty;
+    expect(dayEv(shop, 'a')[1].delta).toBe(second > 0 ? second + B[0] : second);
+  });
+  it('밤 추첨으로 실행돼도 같은 일차 보너스를 받는다', () => {
+    const r = resolveDay([player('a', { score: 20, habits: { smoke: 1 } })], { a: emptyPlan() }, 2, seededRng(1));
+    const s1 = findStage(D.smoke.stages, 1).score;
+    const s2 = findStage(D.smoke.stages, 2).score;
+    const withB = (v: number) => (v > 0 ? v + B[1] : v);
+    expect(nightEv(r, 'a').map((e) => e.delta)).toEqual([withB(s1), withB(s2)]);
+  });
+  it('안정·성장·회복 행동에는 보너스가 없다', () => {
+    const r = resolveDay([player('a')], { a: plan('music', 'study', ['meditate', 'drink']) }, 1, fixedRng(0.999));
+    expect(dayEv(r, 'a').map((e) => e.delta)).toEqual([D.music.score, D.study.stages[0].score, D.meditate.score]);
+    expect(dayEv(r, 'a').some((e) => e.notes.some((n) => n.includes('초반')))).toBe(false);
+  });
+});
+
+describe('같은 날 반복 피로 (안정·성장 행동)', () => {
+  const F = RULE_DATA.sameDayFatigue;
+  /** 음악만 습관인 상태로 음악을 dayCount번 낮에 쓰면 밤 2회도 음악 */
+  const musicDay = (dayCount: number, day = LATE, players = [player('a', { habits: { music: 1 } })]) =>
+    resolveDay(players, { a: plan(...Array.from({ length: dayCount }, () => 'music' as const)) }, day, seededRng(1));
+  const musicNormal = (phase: 'day' | 'night') => D.music.score + (phase === 'night' ? D.music.nightBonus : 0);
+  it(`그날 ${F.fromDailyUse}회째(낮+밤 합산)부터 단계·보너스 대신 피로 점수`, () => {
+    for (const dayCount of [1, 2, 3]) {
+      const r = musicDay(dayCount);
+      const all = [...dayEv(r, 'a'), ...nightEv(r, 'a')].filter((e) => e.actionId !== null);
+      all.forEach((e, i) => {
+        const n = i + 1;
+        expect(e.delta, `${dayCount}칸, ${n}회째`).toBe(n >= F.fromDailyUse ? F.score : musicNormal(e.phase));
+        if (n >= F.fromDailyUse) expect(e.notes).toContain(`같은 날 ${n}회째 피로: +${F.score}`);
+        else expect(e.notes.some((x) => x.includes('피로'))).toBe(false);
+      });
+      expect(stateOf(r, 'a').dailyUses.music).toBe(dayCount + 2);
+    }
+  });
+  it('다음 날 낮 시작 시 횟수가 초기화된다', () => {
+    const r1 = musicDay(3);
+    const r2 = resolveDay(r1.players, { a: plan('music') }, LATE + 1, seededRng(1));
+    expect(dayEv(r2, 'a')[0].delta).toBe(D.music.score);
+    expect(stateOf(r2, 'a').dailyUses.music).toBe(3);
+  });
+  it('피로는 단계·도달 보너스·하루 1회 고단계보다 우선한다 (회차는 계속 증가)', () => {
+    const high = D.study.stages.find((s) => s.high)!;
+    const before = Math.max(1, high.from - F.fromDailyUse + 1);
+    const r = resolveDay(
+      [player('a', { uses: { study: before - 1 }, habits: { study: 1 } })],
+      { a: plan('study', 'study', 'study') }, LATE, seededRng(1),
+    );
+    const all = [...dayEv(r, 'a'), ...nightEv(r, 'a')];
+    expect(all.slice(F.fromDailyUse - 1).every((e) => e.delta === F.score)).toBe(true);
+    expect(stateOf(r, 'a').uses.study).toBe(before - 1 + 5);
+  });
+  it('즉시·회복 행동에는 피로가 없다', () => {
+    const r = resolveDay([player('a', { score: 60, habits: { drink: 1 } })], { a: plan('drink', 'drink', 'drink') }, LATE, seededRng(1));
+    const all = [...dayEv(r, 'a'), ...nightEv(r, 'a')];
+    expect(all.map((e) => e.delta)).toEqual([1, 2, 3, 4, 5].map((u) => findStage(D.drink.stages, u).score));
+    const m = resolveDay([player('a', { habits: { drink: 5 } })], { a: plan(['meditate', 'drink'], ['meditate', 'drink'], ['meditate', 'drink']) }, LATE, seededRng(1));
+    expect(dayEv(m, 'a').map((e) => e.delta)).toEqual([D.meditate.score, D.meditate.score, D.meditate.score]);
+    expect([...all, ...dayEv(m, 'a')].some((e) => e.notes.some((n) => n.includes('피로')))).toBe(false);
   });
 });

@@ -95,7 +95,7 @@ export function DayScreen({ snapshot, locked: connLocked }: { snapshot: RoomSnap
                 {ACTIONS.filter((a) => a.category === cat).map((a) => {
                   const inPlan = plannedSlots(cells).filter((s) => s.actionId === a.id).length;
                   const fits = nextFreeIndex(cells, a.cost) >= 0;
-                  const pv = safePlannedPreview(me, a.id, cells);
+                  const pv = safePlannedPreview(me, a.id, cells, game.day);
                   return (
                     <button
                       key={a.id}

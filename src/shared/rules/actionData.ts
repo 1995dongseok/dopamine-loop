@@ -105,8 +105,8 @@ export const ACTION_DATA: ActionDataMap = {
   },
   // ── 안정 ──
   walk: { score: 2, targetHabitDelta: -1 },
-  music: { score: 2, nightBonus: 2 },
-  cook: { score: 3, firstOfDayBonus: 2 },
+  music: { score: 2, nightBonus: 3 },
+  cook: { score: 2, firstOfDayBonus: 3 },
   friends: { score: 3, minPlayers: 2, bonus: 3 },
   volunteer: { score: 2, bonus: 5 },
   // ── 성장 ──
@@ -127,14 +127,14 @@ export const ACTION_DATA: ActionDataMap = {
       { from: 13, to: null, score: 4 },
     ],
   },
-  project: { score: 1, every: 3, bonus: 7 },
+  project: { score: 2, every: 3, bonus: 7 },
   create: { score: 1, bonus: 10, chancePerUse: 0.04, chanceCap: 0.3 },
   relationship: {
     stages: [
       { from: 1, to: 2, score: 1, reachBonus: 0 },
-      { from: 3, to: 6, score: 2, reachBonus: 1 },
-      { from: 7, to: 12, score: 3, reachBonus: 2 },
-      { from: 13, to: null, score: 4, reachBonus: 3 },
+      { from: 3, to: 6, score: 2, reachBonus: 2 },
+      { from: 7, to: 12, score: 3, reachBonus: 3 },
+      { from: 13, to: null, score: 4, reachBonus: 4 },
     ],
   },
   // ── 회복 ──
@@ -142,6 +142,23 @@ export const ACTION_DATA: ActionDataMap = {
   meditate: { score: 1, targetHabitDelta: -1 },
   detox: { score: 0, habitDeltas: { sns: -2, binge_game: -2 } },
   change_env: { score: 0 },
+};
+
+/**
+ * 행동 하나가 아니라 유형 전체에 걸리는 규칙 수치 (단일 출처).
+ * - instantEarlyBonus: 초반 도파민 보너스. 즉시 행동의 결과(보상·감점 합)가 양수면 그날 일차의 값을 더한다.
+ *   index 0 = 1일째. 배열 밖 일차는 0. 낮·밤 모두 적용.
+ * - sameDayFatigue: 같은 날 반복 피로. 안정·성장 행동을 같은 날(낮+밤 합산) fromDailyUse회째 이상 쓰면
+ *   그 사용의 보상(단계·보너스·감점 전부)을 score로 대체한다. 낮·밤 모두 적용.
+ */
+export interface RuleData {
+  instantEarlyBonus: number[];
+  sameDayFatigue: { fromDailyUse: number; score: number };
+}
+
+export const RULE_DATA: RuleData = {
+  instantEarlyBonus: [3, 2],
+  sameDayFatigue: { fromDailyUse: 5, score: 1 },
 };
 
 /** 표시 순서·이름·유형·행동력·대상 필요 여부 */

@@ -1,6 +1,6 @@
 {
-  "rulesVersion": "1.0.0",
-  "numbersHash": "a25a5edeffc4ddf9",
+  "rulesVersion": "1.1.0",
+  "numbersHash": "93b7cc3751576042",
   "generatedBy": "npm run sim -- --seeds 1000",
   "seedsPerPool": 1000,
   "seedScheme": "pool: gameSeed=mixSeed(n,i), 좌석 전략=seededRng(mixSeed(gameSeed,99)); h2h: mixSeed(2000,a,b,i) 홀수 i 좌석 교대; pace: mixSeed(3000,s,i); bot rng=mixSeed(gameSeed,7919,seat), i=0..seeds-1",
@@ -34,18 +34,38 @@
       "id": "greedy",
       "label": "기대값 탐욕형",
       "description": "슬롯마다 낮 기대 점수 + 밤 기대 점수 변화(남은 일수 가중, 최대 3일)를 최대화. 회복 포함"
+    },
+    {
+      "id": "repeat_relationship",
+      "label": "관계·연애만 반복",
+      "description": "매일 [관계·연애, 관계·연애, 관계·연애] 반복"
+    },
+    {
+      "id": "repeat_exercise",
+      "label": "운동만 반복",
+      "description": "매일 [운동, 운동, 운동] 반복"
+    },
+    {
+      "id": "repeat_study",
+      "label": "공부만 반복",
+      "description": "매일 [공부, 공부, 공부] 반복"
+    },
+    {
+      "id": "repeat_music",
+      "label": "음악 감상만 반복",
+      "description": "매일 [음악 감상, 음악 감상, 음악 감상] 반복"
     }
   ],
   "pace": {
     "stable": {
       "reachRate": 1,
-      "avgReachDay": 5.05,
-      "avgDay10Score": 206
+      "avgReachDay": 5.03,
+      "avgDay10Score": 211
     },
     "growth": {
       "reachRate": 1,
-      "avgReachDay": 6.15,
-      "avgDay10Score": 198
+      "avgReachDay": 6.02,
+      "avgDay10Score": 201
     },
     "instant": {
       "reachRate": 0,
@@ -54,438 +74,659 @@
     },
     "early_instant": {
       "reachRate": 1,
-      "avgReachDay": 6.76,
-      "avgDay10Score": 174
+      "avgReachDay": 6.05,
+      "avgDay10Score": 195
     },
     "mixed": {
       "reachRate": 1,
-      "avgReachDay": 5.94,
-      "avgDay10Score": 198
+      "avgReachDay": 5.51,
+      "avgDay10Score": 207
     },
     "greedy": {
       "reachRate": 1,
-      "avgReachDay": 5.85,
-      "avgDay10Score": 188
+      "avgReachDay": 5.63,
+      "avgDay10Score": 201
+    },
+    "repeat_relationship": {
+      "reachRate": 1,
+      "avgReachDay": 7,
+      "avgDay10Score": 162
+    },
+    "repeat_exercise": {
+      "reachRate": 1,
+      "avgReachDay": 7,
+      "avgDay10Score": 151
+    },
+    "repeat_study": {
+      "reachRate": 1,
+      "avgReachDay": 7,
+      "avgDay10Score": 149
+    },
+    "repeat_music": {
+      "reachRate": 1,
+      "avgReachDay": 9,
+      "avgDay10Score": 120
     }
   },
   "headToHead2p": {
     "stable": {
-      "growth": 0.191,
-      "instant": 1,
-      "early_instant": 0.803,
-      "mixed": 0.313,
-      "greedy": 0.286
+      "growth": 0.209,
+      "instant": 0.999,
+      "early_instant": 0.448,
+      "mixed": 0.346,
+      "greedy": 0.256,
+      "repeat_relationship": 0.982,
+      "repeat_exercise": 1,
+      "repeat_study": 1,
+      "repeat_music": 1
     },
     "growth": {
-      "stable": 0.775,
+      "stable": 0.776,
       "instant": 1,
-      "early_instant": 0.782,
-      "mixed": 0.371,
-      "greedy": 0.464
+      "early_instant": 0.353,
+      "mixed": 0.277,
+      "greedy": 0.367,
+      "repeat_relationship": 1,
+      "repeat_exercise": 1,
+      "repeat_study": 1,
+      "repeat_music": 1
     },
     "instant": {
       "stable": 0,
       "growth": 0,
       "early_instant": 0,
       "mixed": 0,
-      "greedy": 0
+      "greedy": 0,
+      "repeat_relationship": 0,
+      "repeat_exercise": 0,
+      "repeat_study": 0,
+      "repeat_music": 0
     },
     "early_instant": {
-      "stable": 0.2,
-      "growth": 0.185,
+      "stable": 0.519,
+      "growth": 0.604,
       "instant": 1,
-      "mixed": 0.115,
-      "greedy": 0.162
+      "mixed": 0.3,
+      "greedy": 0.328,
+      "repeat_relationship": 0.932,
+      "repeat_exercise": 0.987,
+      "repeat_study": 0.989,
+      "repeat_music": 1
     },
     "mixed": {
-      "stable": 0.715,
-      "growth": 0.609,
+      "stable": 0.649,
+      "growth": 0.705,
       "instant": 1,
-      "early_instant": 0.879,
-      "greedy": 0.446
+      "early_instant": 0.723,
+      "greedy": 0.462,
+      "repeat_relationship": 0.944,
+      "repeat_exercise": 0.989,
+      "repeat_study": 0.993,
+      "repeat_music": 1
     },
     "greedy": {
-      "stable": 0.692,
-      "growth": 0.527,
+      "stable": 0.755,
+      "growth": 0.665,
       "instant": 1,
-      "early_instant": 0.845,
-      "mixed": 0.546
+      "early_instant": 0.655,
+      "mixed": 0.558,
+      "repeat_relationship": 0.956,
+      "repeat_exercise": 0.99,
+      "repeat_study": 0.993,
+      "repeat_music": 1
+    },
+    "repeat_relationship": {
+      "stable": 0.027,
+      "growth": 0,
+      "instant": 1,
+      "early_instant": 0.056,
+      "mixed": 0.053,
+      "greedy": 0.056,
+      "repeat_exercise": 1,
+      "repeat_study": 1,
+      "repeat_music": 1
+    },
+    "repeat_exercise": {
+      "stable": 0,
+      "growth": 0,
+      "instant": 1,
+      "early_instant": 0.005,
+      "mixed": 0.014,
+      "greedy": 0.009,
+      "repeat_relationship": 0,
+      "repeat_study": 0,
+      "repeat_music": 1
+    },
+    "repeat_study": {
+      "stable": 0,
+      "growth": 0,
+      "instant": 1,
+      "early_instant": 0.007,
+      "mixed": 0.007,
+      "greedy": 0.006,
+      "repeat_relationship": 0,
+      "repeat_exercise": 1,
+      "repeat_music": 1
+    },
+    "repeat_music": {
+      "stable": 0,
+      "growth": 0,
+      "instant": 1,
+      "early_instant": 0,
+      "mixed": 0.001,
+      "greedy": 0,
+      "repeat_relationship": 0,
+      "repeat_exercise": 0,
+      "repeat_study": 0
     }
   },
   "pools": {
     "2p": {
       "games": 1000,
-      "jointWinRate": 0.057,
-      "avgEndDay": 6.17,
+      "jointWinRate": 0.059,
+      "avgEndDay": 6.29,
       "endDayDist": {
-        "5": 98,
-        "6": 727,
-        "7": 139,
-        "8": 6,
-        "10": 30
+        "5": 142,
+        "6": 525,
+        "7": 288,
+        "8": 1,
+        "9": 34,
+        "10": 10
       },
-      "day10Rate": 0.03,
+      "day10Rate": 0.01,
       "strategies": {
+        "repeat_exercise": {
+          "games": 193,
+          "wins": 58,
+          "winRate": 0.301,
+          "soloWins": 44,
+          "avgFinal": 92.4,
+          "reachRate": 0.596,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.301
+        },
         "mixed": {
-          "games": 314,
-          "wins": 225,
-          "winRate": 0.717,
-          "soloWins": 213,
-          "avgFinal": 108.1,
-          "reachRate": 0.901,
-          "avgReachDay": 5.99,
-          "recoveryDayRate": 0.093,
-          "winBeforeLossRate": 0.338
+          "games": 224,
+          "wins": 178,
+          "winRate": 0.795,
+          "soloWins": 169,
+          "avgFinal": 108.3,
+          "reachRate": 0.911,
+          "avgReachDay": 5.78,
+          "recoveryDayRate": 0.1,
+          "winBeforeLossRate": 0.33
+        },
+        "repeat_relationship": {
+          "games": 207,
+          "wins": 96,
+          "winRate": 0.464,
+          "soloWins": 77,
+          "avgFinal": 102,
+          "reachRate": 0.527,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.464
+        },
+        "repeat_study": {
+          "games": 188,
+          "wins": 74,
+          "winRate": 0.394,
+          "soloWins": 60,
+          "avgFinal": 94.4,
+          "reachRate": 0.622,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.394
+        },
+        "growth": {
+          "games": 183,
+          "wins": 139,
+          "winRate": 0.76,
+          "soloWins": 135,
+          "avgFinal": 104.9,
+          "reachRate": 0.929,
+          "avgReachDay": 6.01,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.76
+        },
+        "greedy": {
+          "games": 196,
+          "wins": 165,
+          "winRate": 0.842,
+          "soloWins": 160,
+          "avgFinal": 107.7,
+          "reachRate": 0.949,
+          "avgReachDay": 5.83,
+          "recoveryDayRate": 0.514,
+          "winBeforeLossRate": 0.117
+        },
+        "stable": {
+          "games": 197,
+          "wins": 125,
+          "winRate": 0.635,
+          "soloWins": 118,
+          "avgFinal": 106.1,
+          "reachRate": 0.873,
+          "avgReachDay": 6,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.635
+        },
+        "early_instant": {
+          "games": 207,
+          "wins": 158,
+          "winRate": 0.763,
+          "soloWins": 156,
+          "avgFinal": 107.5,
+          "reachRate": 0.855,
+          "avgReachDay": 6.01,
+          "recoveryDayRate": 0.461,
+          "winBeforeLossRate": 0.15
         },
         "instant": {
-          "games": 354,
-          "wins": 57,
-          "winRate": 0.161,
-          "soloWins": 3,
-          "avgFinal": 2.6,
+          "games": 214,
+          "wins": 20,
+          "winRate": 0.093,
+          "soloWins": 0,
+          "avgFinal": 10.6,
           "reachRate": 0,
           "avgReachDay": null,
           "recoveryDayRate": 0,
           "winBeforeLossRate": 0
         },
-        "early_instant": {
-          "games": 339,
-          "wins": 135,
-          "winRate": 0.398,
-          "soloWins": 129,
-          "avgFinal": 99.9,
-          "reachRate": 0.619,
-          "avgReachDay": 6.46,
-          "recoveryDayRate": 0.39,
-          "winBeforeLossRate": 0.118
-        },
-        "greedy": {
-          "games": 322,
-          "wins": 223,
-          "winRate": 0.693,
-          "soloWins": 209,
-          "avgFinal": 106.2,
-          "reachRate": 0.898,
-          "avgReachDay": 5.92,
-          "recoveryDayRate": 0.237,
-          "winBeforeLossRate": 0.27
-        },
-        "stable": {
-          "games": 321,
-          "wins": 192,
-          "winRate": 0.598,
-          "soloWins": 173,
-          "avgFinal": 104.2,
-          "reachRate": 0.897,
-          "avgReachDay": 5.94,
+        "repeat_music": {
+          "games": 191,
+          "wins": 46,
+          "winRate": 0.241,
+          "soloWins": 22,
+          "avgFinal": 84.6,
+          "reachRate": 0.241,
+          "avgReachDay": 9,
           "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.598
-        },
-        "growth": {
-          "games": 350,
-          "wins": 225,
-          "winRate": 0.643,
-          "soloWins": 216,
-          "avgFinal": 103.9,
-          "reachRate": 0.897,
-          "avgReachDay": 6.05,
-          "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.643
+          "winBeforeLossRate": 0.241
         }
       },
       "actionRate": {
-        "drink": 0.04,
-        "smoke": 0.106,
-        "gamble": 0.04,
-        "sns": 0.036,
-        "shopping": 0.039,
-        "binge_game": 0.038,
+        "drink": 0.025,
+        "smoke": 0.063,
+        "gamble": 0.024,
+        "sns": 0.029,
+        "shopping": 0.024,
+        "binge_game": 0.023,
         "walk": 0.005,
-        "music": 0.11,
-        "cook": 0.077,
-        "friends": 0.07,
-        "volunteer": 0.055,
-        "study": 0.174,
-        "exercise": 0,
-        "project": 0.039,
+        "music": 0.183,
+        "cook": 0.04,
+        "friends": 0.032,
+        "volunteer": 0.031,
+        "study": 0.194,
+        "exercise": 0.101,
+        "project": 0.022,
         "create": 0,
-        "relationship": 0.13,
+        "relationship": 0.171,
         "rest": 0,
-        "meditate": 0.04,
-        "detox": 0,
+        "meditate": 0.034,
+        "detox": 0.002,
         "change_env": 0
       },
       "categoryRate": {
-        "instant": 0.3,
-        "stable": 0.316,
-        "growth": 0.344,
-        "recovery": 0.04
+        "instant": 0.188,
+        "stable": 0.289,
+        "growth": 0.487,
+        "recovery": 0.036
       },
-      "recoverySlotRate": 0.04,
-      "recoveryDayRate": 0.118,
-      "nightComebacksPerGame": 0.64,
-      "gamesWithNightComeback": 0.504,
-      "finalNightComebackRate": 0.051,
+      "recoverySlotRate": 0.036,
+      "recoveryDayRate": 0.102,
+      "nightComebacksPerGame": 0.356,
+      "gamesWithNightComeback": 0.264,
+      "finalNightComebackRate": 0.025,
       "lossRecovery": {
         "x": 8,
-        "players": 377,
-        "wonRate": 0.164,
-        "reachedRate": 0.027
+        "players": 243,
+        "wonRate": 0.16,
+        "reachedRate": 0.095
       },
       "lossRecoveryExInstant": {
         "x": 8,
-        "players": 23,
-        "wonRate": 0.217,
-        "reachedRate": 0.435
+        "players": 29,
+        "wonRate": 0.655,
+        "reachedRate": 0.793
       }
     },
     "4p": {
       "games": 1000,
-      "jointWinRate": 0.053,
-      "avgEndDay": 5.84,
+      "jointWinRate": 0.044,
+      "avgEndDay": 5.87,
       "endDayDist": {
-        "5": 192,
-        "6": 778,
-        "7": 29,
-        "8": 1
+        "5": 235,
+        "6": 663,
+        "7": 101,
+        "9": 1
       },
       "day10Rate": 0,
       "strategies": {
+        "mixed": {
+          "games": 390,
+          "wins": 244,
+          "winRate": 0.626,
+          "soloWins": 240,
+          "avgFinal": 106.2,
+          "reachRate": 0.808,
+          "avgReachDay": 5.8,
+          "recoveryDayRate": 0.107,
+          "winBeforeLossRate": 0.331
+        },
+        "repeat_music": {
+          "games": 392,
+          "wins": 2,
+          "winRate": 0.005,
+          "soloWins": 0,
+          "avgFinal": 72.1,
+          "reachRate": 0.005,
+          "avgReachDay": 9,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.005
+        },
+        "growth": {
+          "games": 412,
+          "wins": 175,
+          "winRate": 0.425,
+          "soloWins": 161,
+          "avgFinal": 102,
+          "reachRate": 0.811,
+          "avgReachDay": 6,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.425
+        },
         "instant": {
-          "games": 693,
+          "games": 408,
           "wins": 0,
           "winRate": 0,
           "soloWins": 0,
-          "avgFinal": 4.4,
+          "avgFinal": 15.4,
           "reachRate": 0,
           "avgReachDay": null,
           "recoveryDayRate": 0,
           "winBeforeLossRate": 0
         },
-        "greedy": {
-          "games": 668,
-          "wins": 283,
-          "winRate": 0.424,
-          "soloWins": 272,
+        "early_instant": {
+          "games": 422,
+          "wins": 198,
+          "winRate": 0.469,
+          "soloWins": 191,
           "avgFinal": 102.9,
-          "reachRate": 0.704,
-          "avgReachDay": 5.83,
-          "recoveryDayRate": 0.266,
-          "winBeforeLossRate": 0.228
+          "reachRate": 0.692,
+          "avgReachDay": 5.87,
+          "recoveryDayRate": 0.489,
+          "winBeforeLossRate": 0.095
+        },
+        "repeat_relationship": {
+          "games": 357,
+          "wins": 60,
+          "winRate": 0.168,
+          "soloWins": 36,
+          "avgFinal": 94.7,
+          "reachRate": 0.199,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.168
         },
         "stable": {
-          "games": 669,
-          "wins": 188,
-          "winRate": 0.281,
-          "soloWins": 159,
-          "avgFinal": 102.2,
-          "reachRate": 0.697,
-          "avgReachDay": 5.79,
+          "games": 400,
+          "wins": 139,
+          "winRate": 0.348,
+          "soloWins": 125,
+          "avgFinal": 101.3,
+          "reachRate": 0.73,
+          "avgReachDay": 5.85,
           "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.281
+          "winBeforeLossRate": 0.348
         },
-        "growth": {
-          "games": 670,
-          "wins": 199,
-          "winRate": 0.297,
-          "soloWins": 172,
-          "avgFinal": 101.5,
-          "reachRate": 0.784,
-          "avgReachDay": 6.02,
+        "greedy": {
+          "games": 379,
+          "wins": 194,
+          "winRate": 0.512,
+          "soloWins": 191,
+          "avgFinal": 104,
+          "reachRate": 0.747,
+          "avgReachDay": 5.69,
+          "recoveryDayRate": 0.582,
+          "winBeforeLossRate": 0.121
+        },
+        "repeat_study": {
+          "games": 432,
+          "wins": 22,
+          "winRate": 0.051,
+          "soloWins": 8,
+          "avgFinal": 84.7,
+          "reachRate": 0.16,
+          "avgReachDay": 7,
           "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.297
+          "winBeforeLossRate": 0.051
         },
-        "early_instant": {
-          "games": 634,
-          "wins": 86,
-          "winRate": 0.136,
-          "soloWins": 68,
-          "avgFinal": 93.3,
-          "reachRate": 0.371,
-          "avgReachDay": 6.15,
-          "recoveryDayRate": 0.387,
-          "winBeforeLossRate": 0.084
-        },
-        "mixed": {
-          "games": 666,
-          "wins": 297,
-          "winRate": 0.446,
-          "soloWins": 276,
-          "avgFinal": 103.1,
-          "reachRate": 0.688,
-          "avgReachDay": 5.92,
-          "recoveryDayRate": 0.099,
-          "winBeforeLossRate": 0.237
+        "repeat_exercise": {
+          "games": 408,
+          "wins": 15,
+          "winRate": 0.037,
+          "soloWins": 4,
+          "avgFinal": 83.8,
+          "reachRate": 0.208,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.037
         }
       },
       "actionRate": {
-        "drink": 0.042,
-        "smoke": 0.081,
-        "gamble": 0.043,
-        "sns": 0.037,
-        "shopping": 0.041,
-        "binge_game": 0.041,
+        "drink": 0.025,
+        "smoke": 0.049,
+        "gamble": 0.025,
+        "sns": 0.03,
+        "shopping": 0.024,
+        "binge_game": 0.023,
         "walk": 0.004,
-        "music": 0.12,
-        "cook": 0.106,
-        "friends": 0.074,
-        "volunteer": 0.029,
-        "study": 0.175,
-        "exercise": 0,
-        "project": 0.036,
+        "music": 0.178,
+        "cook": 0.053,
+        "friends": 0.033,
+        "volunteer": 0.013,
+        "study": 0.21,
+        "exercise": 0.105,
+        "project": 0.022,
         "create": 0,
-        "relationship": 0.128,
+        "relationship": 0.166,
         "rest": 0,
-        "meditate": 0.044,
-        "detox": 0,
+        "meditate": 0.038,
+        "detox": 0.002,
         "change_env": 0
       },
       "categoryRate": {
-        "instant": 0.285,
-        "stable": 0.333,
-        "growth": 0.339,
-        "recovery": 0.044
+        "instant": 0.176,
+        "stable": 0.282,
+        "growth": 0.503,
+        "recovery": 0.04
       },
-      "recoverySlotRate": 0.044,
-      "recoveryDayRate": 0.123,
-      "nightComebacksPerGame": 0.936,
-      "gamesWithNightComeback": 0.651,
-      "finalNightComebackRate": 0.076,
+      "recoverySlotRate": 0.04,
+      "recoveryDayRate": 0.113,
+      "nightComebacksPerGame": 0.596,
+      "gamesWithNightComeback": 0.449,
+      "finalNightComebackRate": 0.046,
       "lossRecovery": {
         "x": 8,
-        "players": 747,
-        "wonRate": 0,
-        "reachedRate": 0.009
+        "players": 462,
+        "wonRate": 0.009,
+        "reachedRate": 0.041
       },
       "lossRecoveryExInstant": {
         "x": 8,
         "players": 54,
-        "wonRate": 0,
-        "reachedRate": 0.13
+        "wonRate": 0.074,
+        "reachedRate": 0.352
       }
     },
     "6p": {
       "games": 1000,
-      "jointWinRate": 0.081,
-      "avgEndDay": 5.66,
+      "jointWinRate": 0.059,
+      "avgEndDay": 5.7,
       "endDayDist": {
-        "5": 351,
-        "6": 642,
-        "7": 7
+        "5": 341,
+        "6": 616,
+        "7": 43
       },
       "day10Rate": 0,
       "strategies": {
-        "mixed": {
-          "games": 986,
-          "wins": 271,
-          "winRate": 0.275,
-          "soloWins": 246,
-          "avgFinal": 99.8,
-          "reachRate": 0.583,
-          "avgReachDay": 5.9,
-          "recoveryDayRate": 0.105,
-          "winBeforeLossRate": 0.173
-        },
-        "greedy": {
-          "games": 1002,
-          "wins": 313,
-          "winRate": 0.312,
-          "soloWins": 286,
-          "avgFinal": 99.3,
-          "reachRate": 0.563,
-          "avgReachDay": 5.74,
-          "recoveryDayRate": 0.281,
-          "winBeforeLossRate": 0.196
-        },
-        "stable": {
-          "games": 1087,
-          "wins": 326,
-          "winRate": 0.3,
-          "soloWins": 241,
-          "avgFinal": 102.6,
-          "reachRate": 0.672,
-          "avgReachDay": 5.64,
-          "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.3
-        },
-        "instant": {
-          "games": 959,
+        "repeat_exercise": {
+          "games": 583,
           "wins": 0,
           "winRate": 0,
           "soloWins": 0,
-          "avgFinal": 6.1,
+          "avgFinal": 79.5,
+          "reachRate": 0.057,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0
+        },
+        "repeat_study": {
+          "games": 610,
+          "wins": 16,
+          "winRate": 0.026,
+          "soloWins": 3,
+          "avgFinal": 82.1,
+          "reachRate": 0.077,
+          "avgReachDay": 7,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.026
+        },
+        "growth": {
+          "games": 642,
+          "wins": 153,
+          "winRate": 0.238,
+          "soloWins": 124,
+          "avgFinal": 99.8,
+          "reachRate": 0.702,
+          "avgReachDay": 6,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.238
+        },
+        "repeat_music": {
+          "games": 610,
+          "wins": 0,
+          "winRate": 0,
+          "soloWins": 0,
+          "avgFinal": 69.4,
           "reachRate": 0,
           "avgReachDay": null,
           "recoveryDayRate": 0,
           "winBeforeLossRate": 0
         },
-        "growth": {
-          "games": 968,
-          "wins": 119,
-          "winRate": 0.123,
-          "soloWins": 100,
-          "avgFinal": 97.6,
-          "reachRate": 0.659,
-          "avgReachDay": 6.01,
+        "repeat_relationship": {
+          "games": 591,
+          "wins": 33,
+          "winRate": 0.056,
+          "soloWins": 7,
+          "avgFinal": 90,
+          "reachRate": 0.069,
+          "avgReachDay": 7,
           "recoveryDayRate": 0,
-          "winBeforeLossRate": 0.123
+          "winBeforeLossRate": 0.056
+        },
+        "mixed": {
+          "games": 596,
+          "wins": 240,
+          "winRate": 0.403,
+          "soloWins": 223,
+          "avgFinal": 102.9,
+          "reachRate": 0.651,
+          "avgReachDay": 5.84,
+          "recoveryDayRate": 0.098,
+          "winBeforeLossRate": 0.233
+        },
+        "instant": {
+          "games": 612,
+          "wins": 0,
+          "winRate": 0,
+          "soloWins": 0,
+          "avgFinal": 17.4,
+          "reachRate": 0,
+          "avgReachDay": null,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0
         },
         "early_instant": {
-          "games": 998,
-          "wins": 56,
-          "winRate": 0.056,
-          "soloWins": 46,
-          "avgFinal": 89,
-          "reachRate": 0.247,
-          "avgReachDay": 6.05,
-          "recoveryDayRate": 0.41,
-          "winBeforeLossRate": 0.041
+          "games": 533,
+          "wins": 210,
+          "winRate": 0.394,
+          "soloWins": 194,
+          "avgFinal": 101.4,
+          "reachRate": 0.662,
+          "avgReachDay": 5.8,
+          "recoveryDayRate": 0.485,
+          "winBeforeLossRate": 0.141
+        },
+        "stable": {
+          "games": 631,
+          "wins": 154,
+          "winRate": 0.244,
+          "soloWins": 142,
+          "avgFinal": 99.7,
+          "reachRate": 0.609,
+          "avgReachDay": 5.65,
+          "recoveryDayRate": 0,
+          "winBeforeLossRate": 0.244
+        },
+        "greedy": {
+          "games": 592,
+          "wins": 262,
+          "winRate": 0.443,
+          "soloWins": 248,
+          "avgFinal": 102.7,
+          "reachRate": 0.699,
+          "avgReachDay": 5.64,
+          "recoveryDayRate": 0.573,
+          "winBeforeLossRate": 0.118
         }
       },
       "actionRate": {
-        "drink": 0.043,
-        "smoke": 0.072,
-        "gamble": 0.041,
-        "sns": 0.035,
-        "shopping": 0.041,
-        "binge_game": 0.042,
+        "drink": 0.025,
+        "smoke": 0.047,
+        "gamble": 0.026,
+        "sns": 0.029,
+        "shopping": 0.024,
+        "binge_game": 0.023,
         "walk": 0.004,
-        "music": 0.126,
-        "cook": 0.113,
-        "friends": 0.076,
-        "volunteer": 0.024,
-        "study": 0.176,
-        "exercise": 0,
-        "project": 0.037,
+        "music": 0.185,
+        "cook": 0.057,
+        "friends": 0.034,
+        "volunteer": 0.013,
+        "study": 0.201,
+        "exercise": 0.099,
+        "project": 0.019,
         "create": 0,
-        "relationship": 0.123,
+        "relationship": 0.176,
         "rest": 0,
-        "meditate": 0.047,
-        "detox": 0,
+        "meditate": 0.036,
+        "detox": 0.001,
         "change_env": 0
       },
       "categoryRate": {
-        "instant": 0.274,
-        "stable": 0.344,
-        "growth": 0.336,
-        "recovery": 0.047
+        "instant": 0.175,
+        "stable": 0.293,
+        "growth": 0.495,
+        "recovery": 0.038
       },
-      "recoverySlotRate": 0.047,
-      "recoveryDayRate": 0.133,
-      "nightComebacksPerGame": 0.986,
-      "gamesWithNightComeback": 0.667,
-      "finalNightComebackRate": 0.089,
+      "recoverySlotRate": 0.038,
+      "recoveryDayRate": 0.107,
+      "nightComebacksPerGame": 0.809,
+      "gamesWithNightComeback": 0.563,
+      "finalNightComebackRate": 0.083,
       "lossRecovery": {
         "x": 8,
-        "players": 1031,
-        "wonRate": 0,
-        "reachedRate": 0.003
+        "players": 683,
+        "wonRate": 0.004,
+        "reachedRate": 0.022
       },
       "lossRecoveryExInstant": {
         "x": 8,
-        "players": 72,
-        "wonRate": 0,
-        "reachedRate": 0.042
+        "players": 71,
+        "wonRate": 0.042,
+        "reachedRate": 0.211
       }
     }
   }

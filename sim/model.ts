@@ -1,7 +1,7 @@
 // 봇이 계획을 세울 때 쓰는 "예상치" 계산. 실제 정산은 항상 규칙 함수(resolveDay)가 한다.
 // 여기서는 ACTION_DATA 수치를 읽어 다음 사용의 기대 점수만 추정한다 (상태 변경 없음).
 import { ACTION_IDS, type ActionId, type Counts, type PlayerRuleState } from '../src/shared/types';
-import { ACTION_DATA as D, getAction } from '../src/shared/rules';
+import { ACTION_DATA as D, RULE_DATA as R, getAction } from '../src/shared/rules';
 
 export const INSTANT: ActionId[] = ['drink', 'smoke', 'gamble', 'sns', 'shopping', 'binge_game'];
 export const STABLE: ActionId[] = ['walk', 'music', 'cook', 'friends', 'volunteer'];
@@ -17,11 +17,15 @@ export interface PlanState {
   daily: Counts;
   streak: ActionId | null;
   studyHigh: boolean;
+  /** 계획 중인 일차 (초반 도파민 보너스용) */
+  day: number;
 }
 
-export function planStateOf(p: PlayerRuleState): PlanState {
-  return { score: p.score, uses: { ...p.uses }, habits: { ...p.habits }, daily: {}, streak: null, studyHigh: false };
+export function planStateOf(p: PlayerRuleState, day: number): PlanState {
+  return { score: p.score, uses: { ...p.uses }, habits: { ...p.habits }, daily: {}, streak: null, studyHigh: false, day };
 }
+
+const earlyBonus = (day: number): number => R.instantEarlyBonus[day - 1] ?? 0;
 
 function stage<S extends { from: number; to: number | null }>(stages: S[], use: number): S {
   return stages.find((s) => use >= s.from && (s.to === null || use <= s.to)) ?? stages[stages.length - 1];
@@ -35,8 +39,23 @@ export interface EvCtx {
   friendsChance?: number;
 }
 
-/** 다음 1회 사용의 기대 점수 (하한 보정 무시) */
+/** 다음 1회 사용의 기대 점수 (하한 보정 무시). 같은 날 반복 피로·초반 도파민 보너스 포함 */
 export function ev(ps: PlanState, id: ActionId, ctx: EvCtx): number {
+  const cat = getAction(id).category;
+  if ((cat === 'stable' || cat === 'growth') && (ps.daily[id] ?? 0) + 1 >= R.sameDayFatigue.fromDailyUse) return R.sameDayFatigue.score;
+  const b = cat === 'instant' ? earlyBonus(ps.day) : 0;
+  const pos = (v: number): number => (v > 0 ? v + b : v);
+  if (cat === 'instant') {
+    if (id === 'gamble') {
+      const s = stage(D.gamble.stages, (ps.uses[id] ?? 0) + 1);
+      return s.winChance * pos(s.win) + (1 - s.winChance) * pos(s.loss);
+    }
+    return pos(rawEv(ps, id, ctx));
+  }
+  return rawEv(ps, id, ctx);
+}
+
+function rawEv(ps: PlanState, id: ActionId, ctx: EvCtx): number {
   const use = (ps.uses[id] ?? 0) + 1;
   const daily = ps.daily[id] ?? 0;
   switch (id) {
@@ -74,7 +93,8 @@ export function ev(ps: PlanState, id: ActionId, ctx: EvCtx): number {
 export function applyPlanned(ps: PlanState, id: ActionId, target?: ActionId): void {
   const meta = getAction(id);
   ps.score = Math.max(0, ps.score + ev(ps, id, { phase: 'day' }));
-  if (id === 'study' && stage(D.study.stages, (ps.uses.study ?? 0) + 1).high) ps.studyHigh = true;
+  const fatigued = (ps.daily[id] ?? 0) + 1 >= R.sameDayFatigue.fromDailyUse;
+  if (id === 'study' && !fatigued && stage(D.study.stages, (ps.uses.study ?? 0) + 1).high) ps.studyHigh = true;
   ps.uses[id] = (ps.uses[id] ?? 0) + 1;
   ps.daily[id] = (ps.daily[id] ?? 0) + 1;
   ps.streak = meta.category === 'recovery' ? null : id;

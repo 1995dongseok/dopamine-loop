@@ -1,8 +1,9 @@
 // 카드 표시·예상 밤 확률. 상태를 변경하지 않는다.
 import type { ActionId, ActionPreview, Counts, Plan, PlanSlot, PlayerRuleState } from '../types';
-import { ACTION_DATA as D, type Stage } from './actionData';
-import { STUDY_HIGH_FLAG, applyAction, applyNoAction, dayHabitOps } from './effects';
-import { findStage, isActionId, sign } from './meta';
+import { ACTION_DATA as D, RULE_DATA as R, type Stage } from './actionData';
+import { STUDY_HIGH_FLAG, applyAction, applyNoAction, dayHabitOps, earlyInstantBonus, fatigueNote, isFatigued } from './effects';
+import { GAME_CONSTANTS } from './constants';
+import { findStage, getAction, isActionId, sign } from './meta';
 import { cloneState, resetDaily } from './state';
 import { habitDistribution } from './resolve';
 import { normalizePlan } from './validate';
@@ -19,10 +20,35 @@ function stageLabel<S extends { from: number; to: number | null }>(stages: S[], 
 const scoreOf = (s: Stage): string => sign(s.score);
 
 /**
+ * 유형 공통 규칙을 미리보기에 반영한다.
+ * - 같은 날 반복 피로: player.dailyUses 기준으로 이번 사용이 피로면 결과를 피로 점수 하나로 확정.
+ * - 초반 도파민 보너스(day가 주어지고 즉시 행동일 때): 결과 범위의 양수 끝값에 보너스를 더한다
+ *   (즉시 행동의 결과는 최대 두 가지이므로 끝값별 적용이 정확하다).
+ */
+function applyCommonRules(player: PlayerRuleState, pv: ActionPreview, day: number | undefined): ActionPreview {
+  const category = getAction(pv.actionId).category;
+  const dailyN = (player.dailyUses?.[pv.actionId] ?? 0) + 1;
+  if (isFatigued(category, dailyN)) {
+    const v = R.sameDayFatigue.score;
+    return { ...pv, min: v, max: v, label: `${fatigueNote(dailyN)} (단계·보너스 없음)` };
+  }
+  const bonus = category === 'instant' ? earlyInstantBonus(day) : 0;
+  if (bonus <= 0) return pv;
+  const add = (v: number): number => (v > 0 ? v + bonus : v);
+  return { ...pv, min: add(pv.min), max: add(pv.max), label: `${pv.label} · 초반 보너스 ${sign(bonus)}(양수일 때)` };
+}
+
+/**
  * 이 행동을 다음에 쓸 때의 결과 범위. 상황에 따라 달라지는 보너스·감점(같은 날 재사용, 연속, 밤 보너스,
  * 공동 보너스, 확률, 하루 1회 고단계)은 min~max 범위에 포함하고 label에 조건을 적는다.
+ * 같은 날 반복 피로는 player.dailyUses로 판정한다. day(현재 일차)를 주면 초반 도파민 보너스를 반영한다.
  */
-export function previewAction(player: PlayerRuleState, actionId: ActionId): ActionPreview {
+export function previewAction(player: PlayerRuleState, actionId: ActionId, day?: number): ActionPreview {
+  return applyCommonRules(player, rawPreview(player, actionId), day);
+}
+
+/** 행동별 규칙만 반영한 결과 범위 (유형 공통 규칙 제외) */
+function rawPreview(player: PlayerRuleState, actionId: ActionId): ActionPreview {
   const use = (player.uses?.[actionId] ?? 0) + 1;
   const r = (min: number, max: number, label: string): ActionPreview => ({ actionId, nextUse: use, min, max, label });
 
@@ -117,14 +143,28 @@ export function stateBeforePlannedSlot(player: PlayerRuleState, plannedSlotsBefo
 
 /**
  * 오늘 계획의 앞 칸들 다음에 이 행동을 낮에 실행할 때의 결과 범위.
- * 하루 횟수·연속 사용·하루 1회 고단계처럼 앞 칸으로 확정되는 조건은 정확히 반영하고,
+ * 하루 횟수·연속 사용·하루 1회 고단계·같은 날 반복 피로처럼 앞 칸으로 확정되는 조건은 정확히 반영하고,
  * 공동 보너스(친구·봉사)와 확률 결과(도박·창작)만 min~max 범위로 남긴다. 밤 보너스는 낮 실행이므로 제외.
+ * day(현재 일차)를 주면 초반 도파민 보너스를 반영한다.
  */
 export function previewPlannedAction(
-  player: PlayerRuleState, actionId: ActionId, plannedSlotsBefore: (PlanSlot | null)[],
+  player: PlayerRuleState, actionId: ActionId, plannedSlotsBefore: (PlanSlot | null)[], day?: number,
 ): ActionPreview {
   const p = stateBeforePlannedSlot(player, plannedSlotsBefore);
-  const base = previewAction(p, actionId);
+  const pv = applyCommonRules(p, plannedRawPreview(p, actionId), day);
+  // 낮 칸으로는 피로에 닿지 않아도 밤 추첨까지 합치면 닿을 수 있으면 알려 준다
+  const dailyN = (p.dailyUses[actionId] ?? 0) + 1;
+  const cat = getAction(actionId).category;
+  const from = R.sameDayFatigue.fromDailyUse;
+  if (!isFatigued(cat, dailyN) && isFatigued(cat, dailyN + GAME_CONSTANTS.nightDraws)) {
+    return { ...pv, label: `${pv.label} · 밤에도 나오면 같은 날 ${from}회째부터 피로` };
+  }
+  return pv;
+}
+
+/** 앞 칸이 반영된 상태 p에서 행동별 규칙만 반영한 결과 범위 */
+function plannedRawPreview(p: PlayerRuleState, actionId: ActionId): ActionPreview {
+  const base = rawPreview(p, actionId);
   const use = base.nextUse;
   const r = (min: number, max: number, label: string): ActionPreview => ({ actionId, nextUse: use, min, max, label });
   const daily = p.dailyUses[actionId] ?? 0;

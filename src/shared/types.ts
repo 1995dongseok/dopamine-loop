@@ -111,4 +111,4 @@ export interface ActionPreview {
 
 export type PlanValidation = { ok: true } | { ok: false; reason: string };
 
-export const RULES_VERSION = '1.0.0';
+export const RULES_VERSION = '1.1.0';
